@@ -1,0 +1,280 @@
+.TH irwm 1 "Aug 9, 2017"
+.
+.
+.
+.SH NAME
+
+irwm - a window manager that can be controlled from an infrared remote
+.
+.
+.
+.SH SYNOPSIS
+
+.PD 0
+\fBxinix irwm\fP [\fIOPTIONS\fP]
+.P
+\fBstartx irwm\fP [\fIOPTIONS\fP]
+.PD
+.
+.
+.
+.SH DESCRIPTION
+
+.I
+irwm
+is a window manager that shows one window at time in full-screen. This
+simplicity allows for input devices with a limited number of keys like consumer
+electronics (infrared) remotes.
+.SH OPTIONS
+.TP
+.B
+-l
+receive commands via \fBlirc(4)\fP
+.TP
+.B
+-q
+quit when the last window is closed
+.TP
+.B
+-s
+single key mode (see below)
+.TP
+\fB-display \fIdisplay\fP
+connect to given X server
+.TP
+\fB-fn \fIfont\fP
+use the given font for the window and program lists
+.
+.
+.
+.SH OPERATION
+
+The window manager shows one window at time in full screen. The user can switch
+between them, close one and open new ones. These operations are done via
+commands received from either a keyboard or a \fBlirc(4)\fP remote. The
+following description only specifies the keystroke that generates each command;
+the section \fBLIRC CONFIGURATION\fP explains how to generate them from remote
+controls.
+
+.TP
+.I
+NEXTPANEL
+(Alt-Right)
+switch to the next window
+.TP
+.I
+PREVPANEL
+(Alt-Left)
+switch to the previos window
+.TP
+.I
+QUIT
+(Control-Shift-Tab)
+close irwm
+.TP
+.I
+PANELWINDOW
+(Alt-Tab)
+show the list of windows currently open; the user can move by UPWINDOW and
+DOWNWINDOW, close the list by HIDEWINDOW, OKWINDOW or PANELWINDOW again, close
+a window by KOWINDOW
+.TP
+.I
+PROGSWINDOW
+(Control-Tab)
+shows a list of programs; the user can move by UPWINDOW and DOWNWINDOW, close
+the list by HIDEWINDOW or PROGSWINDOW again, execute a program by OKWINDOW; the
+programs in the list can be specified in the configuration file
+.TP
+.I
+UPWINDOW
+(cursor down)
+in the list of windows or programs, move up
+.TP
+.I
+DOWNWINDOW
+(cursor up)
+in the list of windows or programs, move down
+.TP
+.I
+HIDEWINDOW
+(Escape)
+close the list of windows or programs
+.TP
+.I
+OKWINDOW
+(Return)
+in the list of windows or programs, respectively select the window or execute
+the program
+.TP
+.I
+KOWINDOW
+(c)
+in the list of windows, close the currently active window
+
+.P
+In single key mode (option -s), PANELWINDOW rotates between the window list,
+the program list and no list. This requires a single key to operate the
+window manager since the keys to move up, move down, select and close can be
+used for other functions when the window and program list are not active.
+.
+.
+.
+.SH CONFIGURATION
+
+On startup, irwm reads \fI$HOME/.irwmrc\fP and, if this file does not exists,
+\fI/etc/irwmrc\fP. An example is:
+
+.nf
+    startup /usr/bin/xterm
+    startup /usr/bin/xcalc
+    startup /usr/bin/xclock
+
+    program xterm /usr/bin/xterm
+    program xcalc /usr/bin/xcalc
+    program xfontsel /usr/bin/xfontsel
+    program firefox /usr/bin/firefox
+    program quit
+
+    font Arial-15:bold
+.fi
+
+A line like "\fIstartup /usr/bin/xterm\fP" makes xterm being executed at
+startup.
+.
+A line like "\fIprogram fontsel /usr/bin/xfontsel\fP" makes xfontsel being in
+the list of programs that is shown on PROGSWINDOW (e.g. Control-Tab), so that
+the user can execute it. In both cases, the full path is necessary and no
+argument can be given. The special case "\fIprogram quit\fP" is for an entry in
+the program list to terminate irwm.
+.
+The line "\fIfont Arial-15:bold\fP" tells the font to use in the window and
+program lists.
+.
+.
+.
+.SH LIRC CONFIGURATION
+
+To control irwm from an infrared remote, \fBlircd(8)\fP has to be configured to
+translate some remote keys into the irwm command:
+\fINEXTPANEL\fP,
+\fIPREVPANEL\fP,
+\fIQUIT\fP,
+\fIPANELWINDOW\fP,
+\fIPROGSWINDOW\fP,
+\fIUPWINDOW\fP,
+\fIDOWNWINDOW\fP,
+\fIHIDEWINDOW\fP,
+\fIOKWINDOW\fP and
+\fIKOWINDOW\fP.
+This is done via a \fBlircrc(5)\fP file. As an example,
+\fI~/.lircrc\fP may contain:
+
+.nf
+    begin
+        prog = IRWM
+        button = KEY_RED
+        config = NEXTPANEL
+    end
+    
+    begin
+        prog = IRWM
+        button = KEY_BLUE
+        config = PREVPANEL
+    end
+.fi
+
+A begin-end block is required for each key. The prog field is IRWM. The button
+field is the key in the remote (one of the keys in the \fBlircd.conf(5)\fP
+configuration file). The config field is the irwm command (one between
+\fINEXTPANEL\fP, \fIPREVPANEL\fP, etc.)
+
+In this example, the red key in the remote makes irwm switch to the next
+window, the blue key to the previous.
+
+Such a lircrc file can be checked without a remote by running lircd with the
+\fB-a\fP option and then simulating each key by \fBirsend(1)\fP. For the
+\fI.lircrc\fP above, the following makes irwm switch to the next window, wait a
+second and then switch back to the previous.
+
+.nf
+    irsend SIMULATE '000000000 00 KEY_RED simulated'
+    sleep 1
+    irsend SIMULATE '000000000 00 KEY_BLUE simulated'
+.fi
+.
+.
+.
+.
+.SH BUGS
+
+No program argument can be specified in the irwmrc file. The full path of
+programs are necessary.
+
+The lircrc configuration file is always \fI$HOME/.lircrc\fP. No other file can
+be specified in the command line.
+
+The keystrokes cannot be changed other than editing the program source.
+
+Window names are assumed to be ascii. They are only updated when the panel list
+window is popped up and when moving in it.
+
+There is no provision for ordering windows. Every new window is placed at the
+end of the list. Yet, a program occurring later in \fIirwmrc\fP may show up
+earlier in the list.
+
+If a specific application such as \fBvdr(1)\fP is supposed to always be
+presented to the user at start-up, it has to be the only one launched by
+irwmrc. The user may then run other applications via the program list
+(\fIPROGSWINDOW\fP).
+.
+.
+.
+.SH INTERNALS
+
+Every time an application tries to map a new top-level window that has neither
+the override_redirect flag nor the transient-for WM hint, irwm reparents it to
+a new window it creates for this purpose. This new window is called a
+\fIpanel\fP in the sources. Its size is the same of the root window, and the
+window it contains is resized to the same size.
+
+Besides the keyboard and the remote, commands can be given to irwm by sending a
+ClientMessage with type \fI"IRWM"\fP, format 32 and the command number as first
+data to the root window. Actually, this is how lirc keystrokes are translated
+to commands, by a process forked by irwm at startup. The command numbers are:
+
+.nf
+#define NOCOMMAND    0		/* no command */
+#define NEXTPANEL    1		/* switch to next window */
+#define PREVPANEL    2		/* switch to previous window */
+#define QUIT         3		/* quit irwm */
+
+#define PANELWINDOW 10		/* show the window list */
+#define PROGSWINDOW 11		/* show the program list */
+
+#define UPWINDOW    20		/* up in the list */
+#define DOWNWINDOW  21		/* down in the list */
+#define HIDEWINDOW  22		/* hide both lists */
+#define OKWINDOW    23		/* select the current item in the list */
+#define KOWINDOW    24		/* close the current window */
+.fi
+
+.
+.
+.
+.SH POSSIBLE DEVELOPEMENTS
+
+The configuration file may specify the size for some windows, depending on the 
+window name (\fIWM_NAME\fP property),
+class (\fIWM_CLASS\fP) or
+program (\fIWM_COMMAND\fP).
+
+An option could make NEXTPANEL and PREVPANEL to ``fall off'' to the next or
+previous virtual terminal when at the end of the window list, instead of
+rotating among the windows.
+.
+.
+.
+.SH SEE ALSO
+wm2(1), fvwm(1)
+

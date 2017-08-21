@@ -1,0 +1,64 @@
+# copy to ~/.lircrc
+# adapt the button variables to the actual keys in the remote
+#
+# to test:
+# bash -c "$(grep i[r]send irwm-lircrc | tr -d \#)"
+#
+# the above line executes this:
+# irsend SIMULATE '000000000 00 KEY_RED simulated'; sleep 1;
+# irsend SIMULATE '000000000 00 KEY_YELLOW simulated'; sleep 1;
+# irsend SIMULATE '000000000 00 KEY_DOWN simulated'; sleep 1;
+# irsend SIMULATE '000000000 00 KEY_DOWN simulated'; sleep 1;
+# irsend SIMULATE '000000000 00 KEY_DOWN simulated'; sleep 1;
+# irsend SIMULATE '000000000 00 KEY_DOWN simulated'; sleep 1;
+# irsend SIMULATE '000000000 00 KEY_DOWN simulated'; sleep 1;
+# irsend SIMULATE '000000000 00 KEY_YELLOW simulated'
+
+begin
+	prog = IRWM
+	button = KEY_RED
+	config = NEXTPANEL
+end
+
+begin
+	prog = IRWM
+	button = KEY_BLUE
+	config = PREVPANEL
+end
+
+begin
+	prog = IRWM
+	button = KEY_YELLOW
+	config = PANELWINDOW
+end
+
+begin
+	prog = IRWM
+	button = KEY_GREEN
+	config = PROGSWINDOW
+end
+
+begin
+	prog = IRWM
+	button = KEY_UP
+	config = UPWINDOW
+end
+
+begin
+	prog = IRWM
+	button = KEY_DOWN
+	config = DOWNWINDOW
+end
+
+begin
+	prog = IRWM
+	button = KEY_OK
+	config = OKWINDOW
+end
+
+begin
+	prog = IRWM
+	button = KEY_0
+	config = KOWINDOW
+end
+

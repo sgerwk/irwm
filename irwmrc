@@ -1,0 +1,23 @@
+# an example irwmrc file
+# copy to /etc/irwmrc or ~/.irwmrc
+
+# programs executed on startup
+
+startup /usr/bin/xterm
+startup /usr/bin/xcalc
+startup /usr/bin/xclock
+
+# the programs that can be executed from the program list
+
+program xterm /usr/bin/xterm
+program xcalc /usr/bin/xcalc
+program xfontsel /usr/bin/xfontsel
+program firefox /usr/bin/firefox
+program opera /usr/bin/opera
+program quit
+
+# the font to use in the window and programs lists
+
+# font -*-*-*-*-*-*-24-*-*-*-*-*-*-1
+# font Arial-15:bold
+

@@ -1,10 +1,13 @@
 PROGS=irwm
+MANS=irwm.1
 
 all: $(PROGS)
 
 install: all
 	mkdir -p $(DESTDIR)/usr/bin
 	cp $(PROGS) $(DESTDIR)/usr/bin
+	mkdir -p $(DESTDIR)/usr/share/man/man1
+	cp $(MANS) $(DESTDIR)/usr/share/man/man1
 
 CFLAGS=-Wall -Wextra
 

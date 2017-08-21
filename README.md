@@ -9,7 +9,7 @@ It can be started from a virtual terminal via either of the two following ways:
 
 Upon startup, it reads the configuration file .irwmrc or /etc/irwmrc, which
 contains the programs it initially launch and the ones that are shown in the
-program list to be launched later. File (irwmrc)[/irwmrc] is an example.
+program list to be launched later. File [irwmrc](/irwmrc) is an example.
 
 It can be controlled via the keyboard:
 
@@ -21,6 +21,6 @@ It can be controlled via the keyboard:
 
 The same functions can be performed from a remote control by passing option -l
 to irwm and adding to .lircrc the association between lirc keys and irwm
-commands. This is described in irwm man page (irwm.1)[/irwm.1]. File
-(lircrc)[/lircrc] is an example.
+commands. This is described in irwm man page [irwm.1](/irwm.1). File
+[lircrc](/lircrc) is an example.
 

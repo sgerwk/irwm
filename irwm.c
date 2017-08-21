@@ -38,7 +38,7 @@
  *   OKWINDOW		select the current item in the window
  *   KOWINDOW		only in the panel list window: close the current panel
  *
- * irwm-lircrc for details on configuring and testing lirc
+ * details on configuring and testing lirc are in file lircrd
  */
 
 /*

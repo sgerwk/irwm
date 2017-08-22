@@ -748,6 +748,7 @@ int main(int argn, char *argv[], char *env[]) {
 	irwmrcname = malloc(strlen(getenv("HOME")) + 20);
 	sprintf(irwmrcname, "%s/.irwmrc", getenv("HOME"));
 	irwmrc = fopen(irwmrcname, "r");
+	free(irwmrcname);
 	if (irwmrc == NULL)
 		irwmrc = fopen("/etc/irwmrc", "r");
 	if (irwmrc == NULL) {

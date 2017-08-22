@@ -887,7 +887,7 @@ int main(int argn, char *argv[], char *env[]) {
 
 	for (run = True; run; ) {
 
-				/* get X events */
+				/* get X event */
 
 		XNextEvent(dsp, &evt);
 

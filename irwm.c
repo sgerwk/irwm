@@ -1225,7 +1225,6 @@ int main(int argn, char *argv[], char *env[]) {
 	}
 	for (i = 0; i < numpanels; i++)
 		closewindow(dsp, panel[i].content);
-	sleep(1);
 	XCloseDisplay(dsp);
 	printf("%s ended\n", argv[0]);
 

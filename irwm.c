@@ -305,6 +305,35 @@ int numpanels = 0;
 int activepanel = -1;
 
 /*
+ * print data of a panel
+ */
+void panelprint(char *type, int pn) {
+	printf("PANEL %d %10.10s ", pn, type);
+	printf("panel=0x%lx ", panel[pn].panel);
+	printf("content=0x%lx ", panel[pn].content);
+	printf("title=%s", panel[pn].name);
+	printf("\n");
+}
+
+/*
+ * index of a panel and/or content (not found: -1)
+ */
+#define PANEL	(1<<0)
+#define CONTENT (1<<1)
+int panelfind(Window p, int panelorcontent) {
+	int i;
+
+	for (i = 0; i < numpanels; i++) {
+		if (panelorcontent & PANEL && p == panel[i].panel)
+			return i;
+		if (panelorcontent & CONTENT && p == panel[i].content)
+			return i;
+	}
+
+	return -1;
+}
+
+/*
  * retrieve and store the name of the window in a panel
  */
 void panelname(Display *dsp, int pn) {
@@ -333,6 +362,11 @@ int paneladd(Display *dsp, Window root, Window win, XWindowAttributes *wa) {
 		return -1;
 	}
 
+	if (panelfind(win, PANEL | CONTENT) != -1) {
+		printf("IRWM WARNING: window 0x%lx already exists\n", win);
+		return -1;
+	}
+
 	p = XCreateSimpleWindow(dsp, root, wa->x, wa->y, wa->width, wa->height,
 			0, 0, WhitePixel(dsp, DefaultScreen(dsp)));
 	XSelectInput(dsp, p, SubstructureNotifyMask);
@@ -347,24 +381,6 @@ int paneladd(Display *dsp, Window root, Window win, XWindowAttributes *wa) {
 	panelname(dsp, numpanels);
 
 	return numpanels++;
-}
-
-/*
- * index of a panel and/or content (not found: -1)
- */
-#define PANEL	(1<<0)
-#define CONTENT (1<<1)
-int panelfind(Window p, int panelorcontent) {
-	int i;
-
-	for (i = 0; i < numpanels; i++) {
-		if (panelorcontent & PANEL && p == panel[i].panel)
-			return i;
-		if (panelorcontent & CONTENT && p == panel[i].content)
-			return i;
-	}
-
-	return -1;
 }
 
 /*
@@ -391,6 +407,8 @@ int panelremove(Display *dsp, int pos) {
  * leave the current panel
  */
 void panelleave(Display *dsp) {
+	panelprint("LEAVE", activepanel);
+
 	XUnmapWindow(dsp, panel[activepanel].panel);
 	XUnmapWindow(dsp, panel[activepanel].content);
 
@@ -402,6 +420,8 @@ void panelleave(Display *dsp) {
  */
 void panelenter(Display *dsp) {
 	long data[2];
+
+	panelprint("ENTER", activepanel);
 
 	XMapWindow(dsp, panel[activepanel].content);
 	XMapWindow(dsp, panel[activepanel].panel);
@@ -909,8 +929,7 @@ int main(int argn, char *argv[], char *env[]) {
 				printf("error creating new panel\n");
 				break;
 			}
-			printf("\tNEW PANEL %d: 0x%lx (%s)\n",
-				pn, panel[pn].panel, panel[pn].name);
+			panelprint("CREATE", pn);
 
 			XMoveResizeWindow(dsp, ermap.window,
 				0, 0, rwa.width, rwa.height);
@@ -985,6 +1004,7 @@ int main(int argn, char *argv[], char *env[]) {
 			pn = panelfind(edestroy.event, PANEL);
 			if (pn == -1)
 				break;
+			panelprint("DESTROY", pn);
 
 			panelremove(dsp, pn);
 

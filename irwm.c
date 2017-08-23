@@ -308,7 +308,7 @@ int activepanel = -1;
  * print data of a panel
  */
 void panelprint(char *type, int pn) {
-	printf("PANEL %d %10.10s ", pn, type);
+	printf("PANEL %d %-10.10s ", pn, type);
 	printf("panel=0x%lx ", panel[pn].panel);
 	printf("content=0x%lx ", panel[pn].content);
 	printf("title=%s", panel[pn].name);

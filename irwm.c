@@ -358,13 +358,13 @@ int paneladd(Display *dsp, Window root, Window win, XWindowAttributes *wa) {
 	char name[40];
 
 	if (numpanels >= MAXPANELS) {
-		printf("IRWM ERROR: too many open panels,");
+		printf("IRWM ERROR: too many open panels, ");
 		printf("not creating a new one for window 0x%lx\n", win);
 		return -1;
 	}
 
 	if (panelfind(win, PANEL | CONTENT) != -1) {
-		printf("IRWM WARNING: window 0x%lx already exists,", win);
+		printf("IRWM WARNING: window 0x%lx already exists, ", win);
 		printf("ignoring mapping request\n");
 		return -1;
 	}

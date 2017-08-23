@@ -358,12 +358,14 @@ int paneladd(Display *dsp, Window root, Window win, XWindowAttributes *wa) {
 	char name[40];
 
 	if (numpanels >= MAXPANELS) {
-		printf("IRWM ERROR: too many open panels\n");
+		printf("IRWM ERROR: too many open panels,");
+		printf("not creating a new one for window 0x%lx\n", win);
 		return -1;
 	}
 
 	if (panelfind(win, PANEL | CONTENT) != -1) {
-		printf("IRWM WARNING: window 0x%lx already exists\n", win);
+		printf("IRWM WARNING: window 0x%lx already exists,", win);
+		printf("ignoring mapping request\n");
 		return -1;
 	}
 
@@ -380,22 +382,25 @@ int paneladd(Display *dsp, Window root, Window win, XWindowAttributes *wa) {
 	panel[numpanels].name = NULL;
 	panelname(dsp, numpanels);
 
+	panelprint("CREATE", numpanels);
+
 	return numpanels++;
 }
 
 /*
  * remove a panel
  */
-int panelremove(Display *dsp, int pos) {
+int panelremove(Display *dsp, int pn) {
 	int i;
 
-	if (pos < 0 || pos >= numpanels)
+	panelprint("DESTROY", pn);
+	if (pn < 0 || pn >= numpanels)
 		return -1;
 
-	XDestroyWindow(dsp, panel[pos].panel);
-	free(panel[pos].name);
+	XDestroyWindow(dsp, panel[pn].panel);
+	free(panel[pn].name);
 
-	for (i = pos + 1; i < numpanels; i++)
+	for (i = pn + 1; i < numpanels; i++)
 		panel[i - 1] = panel[i];
 
 	numpanels--;
@@ -925,11 +930,8 @@ int main(int argn, char *argv[], char *env[]) {
 			printf("\n");
 
 			pn = paneladd(dsp, root, ermap.window, &rwa);
-			if (pn == -1) {
-				printf("error creating new panel\n");
+			if (pn == -1)
 				break;
-			}
-			panelprint("CREATE", pn);
 
 			XMoveResizeWindow(dsp, ermap.window,
 				0, 0, rwa.width, rwa.height);
@@ -1004,7 +1006,6 @@ int main(int argn, char *argv[], char *env[]) {
 			pn = panelfind(edestroy.event, PANEL);
 			if (pn == -1)
 				break;
-			panelprint("DESTROY", pn);
 
 			panelremove(dsp, pn);
 

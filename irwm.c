@@ -151,6 +151,40 @@
 Atom wm_state, wm_protocols, wm_delete_window;
 
 /*
+ * from command to string and vice versa
+ */
+struct {
+	int command;	char *commandstring;
+} commandstring[] = {
+	{NOCOMMAND,	"NOCOMMAND"},
+	{NEXTPANEL,	"NEXTPANEL"},
+	{PREVPANEL,	"PREVPANEL"},
+	{QUIT,		"QUIT"},
+	{PANELWINDOW,	"PANELWINDOW"},
+	{PROGSWINDOW,	"PROGSWINDOW"},
+	{UPWINDOW,	"UPWINDOW"},
+	{DOWNWINDOW,	"DOWNWINDOW"},
+	{HIDEWINDOW,	"HIDEWINDOW"},
+	{OKWINDOW,	"OKWINDOW"},
+	{KOWINDOW,	"KOWINDOW"},
+	{0,		NULL}
+};
+char *commandtostring(int command) {
+	int i;
+	for(i = 0; commandstring[i].commandstring; i++)
+		if (commandstring[i].command == command)
+			return commandstring[i].commandstring;
+	return "ERROR: no such command";
+}
+int stringtocommand(char *string) {
+	int i;
+	for(i = 0; commandstring[i].commandstring; i++)
+		if (! strcmp(commandstring[i].commandstring, string))
+			return commandstring[i].command;
+	return -1;
+}
+
+/*
  * the lirc client
  */
 #ifndef LIRC
@@ -195,29 +229,7 @@ int lirc(Window root, Atom irwm) {
 			message.message_type = irwm;
 			message.format = 32;
 
-			if (! strcmp(c, "NOCOMMAND"))
-				message.data.l[0] = NOCOMMAND;
-			else if (! strcmp(c, "NEXTPANEL"))
-				message.data.l[0] = NEXTPANEL;
-			else if (! strcmp(c, "PREVPANEL"))
-				message.data.l[0] = PREVPANEL;
-			else if (! strcmp(c, "QUIT"))
-				message.data.l[0] = QUIT;
-			else if (! strcmp(c, "PANELWINDOW"))
-				message.data.l[0] = PANELWINDOW;
-			else if (! strcmp(c, "PROGSWINDOW"))
-				message.data.l[0] = PROGSWINDOW;
-			else if (! strcmp(c, "UPWINDOW"))
-				message.data.l[0] = UPWINDOW;
-			else if (! strcmp(c, "DOWNWINDOW"))
-				message.data.l[0] = DOWNWINDOW;
-			else if (! strcmp(c, "HIDEWINDOW"))
-				message.data.l[0] = HIDEWINDOW;
-			else if (! strcmp(c, "OKWINDOW"))
-				message.data.l[0] = OKWINDOW;
-			else if (! strcmp(c, "KOWINDOW"))
-				message.data.l[0] = KOWINDOW;
-
+			message.data.l[0] = stringtocommand(c);
 			message.data.l[1] = 0;
 			message.data.l[2] = 0;
 			message.data.l[3] = 0;
@@ -661,6 +673,9 @@ void closewindow(Display *dsp, Window win) {
  * main
  */
 int main(int argn, char *argv[], char *env[]) {
+	char *logfile = "irwm.log";
+	int lf;
+
 	char *irwmrcname;
 	FILE *irwmrc;
 	char line[200], s1[200], s2[200];
@@ -727,6 +742,15 @@ int main(int argn, char *argv[], char *env[]) {
 			argn--;
 			argv++;
 		}
+		else if (! strcmp(argv[1], "-log")) {
+			if (argn - 1 < 2) {
+				printf("error: -log requires value\n");
+				exit(EXIT_FAILURE);
+			}
+			logfile = argv[2];
+			argn--;
+			argv++;
+		}
 		else {
 			if (! ! strcmp(argv[1], "-h"))
 				printf("unrecognized option: %s\n", argv[1]);
@@ -743,6 +767,18 @@ int main(int argn, char *argv[], char *env[]) {
 		}
 		argn--;
 		argv++;
+	}
+
+				/* log file */
+	
+	if (! ! strcmp(logfile, "-")) {
+		lf = creat(logfile, S_IRUSR | S_IWUSR);
+		if (lf == -1)
+			perror(logfile);
+		else {
+			dup2(lf, STDOUT_FILENO);
+			dup2(lf, STDERR_FILENO);
+		}
 	}
 
 				/* open display */
@@ -1098,7 +1134,8 @@ int main(int argn, char *argv[], char *env[]) {
 		case KeyPress:
 			printf("KeyPress\n");
 			ekey = evt.xkey;
-			printf("\t0x%lx", ekey.subwindow);
+			printf("\t0x%lx ", ekey.subwindow);
+			printf("key=%d state=%d", ekey.keycode, ekey.state);
 			printf("\n");
 
 			if (matchkey(ekey, NEXTKEY, NEXTMOD))
@@ -1154,6 +1191,9 @@ int main(int argn, char *argv[], char *env[]) {
 		}
 
 					/* execute command */
+
+		if (command != NOCOMMAND)
+			printf("COMMAND %s\n", commandtostring(command));
 
 		if (command == PANELWINDOW && showpanel)
 			command = singlekey ? PROGSWINDOW : HIDEWINDOW;

@@ -1287,7 +1287,7 @@ int main(int argn, char *argv[], char *env[]) {
 	for (i = 0; i < numpanels; i++)
 		closewindow(dsp, panel[i].content);
 	XCloseDisplay(dsp);
-	printf("%s ended\n", argv[0]);
+	printf("irwm ended\n");
 
 	return EXIT_SUCCESS;
 }

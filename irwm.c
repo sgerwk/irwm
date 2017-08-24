@@ -87,6 +87,17 @@
 #endif
 
 /*
+ * the lirc program name and the X atom used for client-client communication
+ */
+#define IRWM "IRWM"
+
+/*
+ * the default font for the irwm windows (panel list and program list)
+ */
+#define FONT "-*-*-*-*-*-*-24-*-*-*-*-*-*-1"
+#define XFTFONT "Arial-15:bold"
+
+/*
  * commands
  */
 #define NOCOMMAND    0		/* no command */
@@ -104,41 +115,47 @@
 #define KOWINDOW    24		/* close currently selected panel */
 
 /*
- * the lirc program name and the X atom used for client-client communication
+ * commands, their names and keystrokes
  */
-#define IRWM "IRWM"
-
-/*
- * key+modifier for each command
- */
-#define NEXTKEY     XKeysymToKeycode(dsp, XK_Right)
-#define NEXTMOD     (Mod1Mask)
-#define PREVKEY     XKeysymToKeycode(dsp, XK_Left)
-#define PREVMOD     (Mod1Mask)
-#define QUITKEY     XKeysymToKeycode(dsp, XK_Tab)
-#define QUITMOD     (ControlMask | ShiftMask)
-
-#define PANELKEY    XKeysymToKeycode(dsp, XK_Tab)
-#define PANELMOD    (Mod1Mask)
-#define PROGSKEY    XKeysymToKeycode(dsp, XK_Tab)
-#define PROGSMOD    (ControlMask)
-
-#define UPKEY       XKeysymToKeycode(dsp, XK_Up)
-#define UPMOD       (0)
-#define DOWNKEY     XKeysymToKeycode(dsp, XK_Down)
-#define DOWNMOD     (0)
-#define HIDEKEY     XKeysymToKeycode(dsp, XK_Escape)
-#define HIDEMOD     (0)
-#define OKKEY       XKeysymToKeycode(dsp, XK_Return)
-#define OKMOD       (0)
-#define KOKEY       XKeysymToKeycode(dsp, XK_c)
-#define KOMOD       (0)
-
-/*
- * the default font for the irwm windows (panel list and program list)
- */
-#define FONT "-*-*-*-*-*-*-24-*-*-*-*-*-*-1"
-#define XFTFONT "Arial-15:bold"
+struct {
+	int command;	char *string;	int keysym;	unsigned modifier;
+} commandstring[] = {
+	{NOCOMMAND,	"NOCOMMAND",	XK_VoidSymbol,	0},
+	{NEXTPANEL,	"NEXTPANEL",	XK_Right,	Mod1Mask},
+	{PREVPANEL,	"PREVPANEL",	XK_Left,	Mod1Mask},
+	{QUIT,		"QUIT",		XK_Tab,	ControlMask | ShiftMask},
+	{PANELWINDOW,	"PANELWINDOW",	XK_Tab,		Mod1Mask},
+	{PROGSWINDOW,	"PROGSWINDOW",	XK_Tab,		ControlMask},
+	{-1,		"LISTONLY",	XK_VoidSymbol,	0},
+	{UPWINDOW,	"UPWINDOW",	XK_Up,		0},
+	{DOWNWINDOW,	"DOWNWINDOW",	XK_Down,	0},
+	{HIDEWINDOW,	"HIDEWINDOW",	XK_Escape,	0},
+	{OKWINDOW,	"OKWINDOW",	XK_Return,	0},
+	{KOWINDOW,	"KOWINDOW",	XK_c,		0},
+	{-1,		NULL,		XK_VoidSymbol,	0}
+};
+char *commandtostring(int command) {
+	int i;
+	for(i = 0; commandstring[i].string; i++)
+		if (commandstring[i].command == command)
+			return commandstring[i].string;
+	return "ERROR: no such command";
+}
+int stringtocommand(char *string) {
+	int i;
+	for(i = 0; commandstring[i].string; i++)
+		if (! strcmp(commandstring[i].string, string))
+			return commandstring[i].command;
+	return -1;
+}
+int eventtocommand(Display *dsp, XKeyEvent e) {
+	int i;
+	for(i = 0; commandstring[i].string; i++)
+		if (e.keycode == XKeysymToKeycode(dsp, commandstring[i].keysym)
+		    && e.state == commandstring[i].modifier)
+			return commandstring[i].command;
+	return -1;
+}
 
 /*
  * increase or decrease with module
@@ -149,40 +166,6 @@
  * ICCCM atoms
  */
 Atom wm_state, wm_protocols, wm_delete_window;
-
-/*
- * from command to string and vice versa
- */
-struct {
-	int command;	char *commandstring;
-} commandstring[] = {
-	{NOCOMMAND,	"NOCOMMAND"},
-	{NEXTPANEL,	"NEXTPANEL"},
-	{PREVPANEL,	"PREVPANEL"},
-	{QUIT,		"QUIT"},
-	{PANELWINDOW,	"PANELWINDOW"},
-	{PROGSWINDOW,	"PROGSWINDOW"},
-	{UPWINDOW,	"UPWINDOW"},
-	{DOWNWINDOW,	"DOWNWINDOW"},
-	{HIDEWINDOW,	"HIDEWINDOW"},
-	{OKWINDOW,	"OKWINDOW"},
-	{KOWINDOW,	"KOWINDOW"},
-	{0,		NULL}
-};
-char *commandtostring(int command) {
-	int i;
-	for(i = 0; commandstring[i].commandstring; i++)
-		if (commandstring[i].command == command)
-			return commandstring[i].commandstring;
-	return "ERROR: no such command";
-}
-int stringtocommand(char *string) {
-	int i;
-	for(i = 0; commandstring[i].commandstring; i++)
-		if (! strcmp(commandstring[i].commandstring, string))
-			return commandstring[i].command;
-	return -1;
-}
 
 /*
  * the lirc client
@@ -198,7 +181,7 @@ int lirc(Window root, Atom irwm) {
 	Display *dsp;
 	struct lirc_config *config;
 	char *code, *c;
-	XClientMessageEvent message;
+	XEvent message;
 
 	displayname = getenv("DISPLAY");
 	dsp = XOpenDisplay(displayname);
@@ -225,18 +208,17 @@ int lirc(Window root, Atom irwm) {
 			printf("lirc: %s\n", c);
 
 			message.type = ClientMessage;
-			message.window = root;
-			message.message_type = irwm;
-			message.format = 32;
+			message.xclient.window = root;
+			message.xclient.message_type = irwm;
+			message.xclient.format = 32;
 
-			message.data.l[0] = stringtocommand(c);
-			message.data.l[1] = 0;
-			message.data.l[2] = 0;
-			message.data.l[3] = 0;
-			message.data.l[4] = 0;
+			message.xclient.data.l[0] = stringtocommand(c);
+			message.xclient.data.l[1] = 0;
+			message.xclient.data.l[2] = 0;
+			message.xclient.data.l[3] = 0;
+			message.xclient.data.l[4] = 0;
 
-			XSendEvent(dsp, root, False, KeyPressMask,
-				(XEvent *) &message);
+			XSendEvent(dsp, root, False, KeyPressMask, &message);
 			XFlush(dsp);
 		}
 		free(code);
@@ -295,13 +277,6 @@ int forkprogram(char *path, char *arg, char **env) {
 	perror(path);
 	printf("cannot execute %s\n", path);
 	exit(EXIT_FAILURE);
-}
-
-/*
- * match key + modifier
- */
-int matchkey(XKeyEvent e, unsigned int keycode, unsigned int state) {
-	return e.keycode == keycode && e.state == state;
 }
 
 /*
@@ -475,7 +450,7 @@ struct {
 int numprograms = 0;
 
 /*
- * the windows for the panel list and the program list
+ * the windows irwm draws in: the panel list and the program list
  */
 typedef struct {
 	Window window;
@@ -640,7 +615,7 @@ void raiselists(Display *dsp, ListWindow *panels, ListWindow *progs) {
  * close a window; called when pressing 'c' in the panel list
  */
 void closewindow(Display *dsp, Window win) {
-	XClientMessageEvent message;
+	XEvent message;
 	Atom *props;
 	int numprops, i;
 	Bool delete = False;
@@ -661,12 +636,12 @@ void closewindow(Display *dsp, Window win) {
 
 	memset(&message, 0, sizeof(message));
 	message.type = ClientMessage;
-	message.window = win;
-	message.message_type = wm_protocols;
-	message.format = 32;
-	message.data.l[0] = wm_delete_window;
-	message.data.l[1] = CurrentTime;
-	XSendEvent(dsp, win, False, 0, (XEvent *) &message);
+	message.xclient.window = win;
+	message.xclient.message_type = wm_protocols;
+	message.xclient.format = 32;
+	message.xclient.data.l[0] = wm_delete_window;
+	message.xclient.data.l[1] = CurrentTime;
+	XSendEvent(dsp, win, False, 0, &message);
 }
 
 /*
@@ -933,16 +908,11 @@ int main(int argn, char *argv[], char *env[]) {
 
 				/* grab keys */
 
-	XGrabKey(dsp, NEXTKEY, NEXTMOD, root,
-		False, GrabModeAsync, GrabModeAsync);
-	XGrabKey(dsp, PREVKEY, PREVMOD, root,
-		False, GrabModeAsync, GrabModeAsync);
-	XGrabKey(dsp, QUITKEY, QUITMOD, root,
-		False, GrabModeAsync, GrabModeAsync);
-	XGrabKey(dsp, PANELKEY, PANELMOD, root,
-		False, GrabModeAsync, GrabModeAsync);
-	XGrabKey(dsp, PROGSKEY, PROGSMOD, root,
-		False, GrabModeAsync, GrabModeAsync);
+	for (i = 0; ! ! strcmp(commandstring[i].string, "LISTONLY"); i++)
+		XGrabKey(dsp,
+			XKeysymToKeycode(dsp, commandstring[i].keysym),
+			commandstring[i].modifier,
+			root, False, GrabModeAsync, GrabModeAsync);
 
 				/* main loop */
 
@@ -1138,29 +1108,7 @@ int main(int argn, char *argv[], char *env[]) {
 			printf("key=%d state=%d", ekey.keycode, ekey.state);
 			printf("\n");
 
-			if (matchkey(ekey, NEXTKEY, NEXTMOD))
-				command = NEXTPANEL;
-			if (matchkey(ekey, PREVKEY, PREVMOD))
-				command = PREVPANEL;
-			if (matchkey(ekey, QUITKEY, QUITMOD))
-				command = QUIT;
-
-			if (matchkey(ekey, PANELKEY, PANELMOD))
-				command = PANELWINDOW;
-			if (matchkey(ekey, PROGSKEY, PROGSMOD))
-				command = PROGSWINDOW;
-
-			if (matchkey(ekey, UPKEY, UPMOD))
-				command = UPWINDOW;
-			if (matchkey(ekey, DOWNKEY, DOWNMOD))
-				command = DOWNWINDOW;
-			if (matchkey(ekey, HIDEKEY, HIDEMOD))
-				command = HIDEWINDOW;
-			if (matchkey(ekey, OKKEY, OKMOD))
-				command = OKWINDOW;
-			if (matchkey(ekey, KOKEY, KOMOD))
-				command = KOWINDOW;
-
+			command = eventtocommand(dsp, ekey);
 			break;
 		case KeyRelease:
 			printf("KeyRelease\n");

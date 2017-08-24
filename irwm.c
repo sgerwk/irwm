@@ -908,7 +908,7 @@ int main(int argn, char *argv[], char *env[]) {
 
 				/* grab keys */
 
-	for (i = 0; ! ! strcmp(commandstring[i].string, "LISTONLY"); i++)
+	for (i = 1; ! ! strcmp(commandstring[i].string, "LISTONLY"); i++)
 		XGrabKey(dsp,
 			XKeysymToKeycode(dsp, commandstring[i].keysym),
 			commandstring[i].modifier,

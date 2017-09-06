@@ -126,7 +126,7 @@ struct {
 	{QUIT,		"QUIT",		XK_Tab,	ControlMask | ShiftMask},
 	{PANELWINDOW,	"PANELWINDOW",	XK_Tab,		Mod1Mask},
 	{PROGSWINDOW,	"PROGSWINDOW",	XK_Tab,		ControlMask},
-	{-1,		"LISTONLY",	XK_VoidSymbol,	0},
+	{-1,		"ENDGRAB",	XK_VoidSymbol,	0},
 	{UPWINDOW,	"UPWINDOW",	XK_Up,		0},
 	{DOWNWINDOW,	"DOWNWINDOW",	XK_Down,	0},
 	{HIDEWINDOW,	"HIDEWINDOW",	XK_Escape,	0},
@@ -176,12 +176,15 @@ int lirc(Window __attribute__((unused)) root,
 	return EXIT_FAILURE;
 }
 #else
-int lirc(Window root, Atom irwm) {
+int lirc(Window root, Atom irwm, char *lircrc) {
 	char *displayname;
 	Display *dsp;
 	struct lirc_config *config;
 	char *code, *c;
 	XEvent message;
+
+	printf("lirc client started: ");
+	printf("config file: %s\n", lircrc ? lircrc : "default");
 
 	displayname = getenv("DISPLAY");
 	dsp = XOpenDisplay(displayname);
@@ -195,7 +198,7 @@ int lirc(Window root, Atom irwm) {
 		exit(EXIT_FAILURE);
 	}
 
-	if (lirc_readconfig(NULL, &config, NULL) != 0) {
+	if (lirc_readconfig(lircrc, &config, NULL) != 0) {
 		printf("failed lirc_readconfig\n");
 		exit(EXIT_FAILURE);
 	}
@@ -227,6 +230,8 @@ int lirc(Window root, Atom irwm) {
 	lirc_freeconfig(config);
 	lirc_deinit();
 	XCloseDisplay(dsp);
+
+	printf("lirc client ended\n");
 	return EXIT_SUCCESS;
 }
 #endif
@@ -242,7 +247,7 @@ void reaper(int s) {
 		pid = wait(NULL);
 		printf("reaped child %d", pid);
 		if (pid == lircclient) {
-			printf(" (lircclient)");
+			printf(" (lirc client)");
 			lircclient = -1;
 		}
 		printf("\n");
@@ -252,7 +257,7 @@ void reaper(int s) {
 /*
  * fork an external program
  */
-int forkprogram(char *path, char *arg, char **env) {
+int forkprogram(char *path, char *arg) {
 	int pid;
 	char **argv;
 
@@ -273,7 +278,7 @@ int forkprogram(char *path, char *arg, char **env) {
 	argv[1] = arg;
 	if (arg != NULL)
 		argv[2] = NULL;
-	execve(path, argv, env);
+	execvp(path, argv);
 	perror(path);
 	printf("cannot execute %s\n", path);
 	exit(EXIT_FAILURE);
@@ -647,12 +652,13 @@ void closewindow(Display *dsp, Window win) {
 /*
  * main
  */
-int main(int argn, char *argv[], char *env[]) {
+int main(int argn, char *argv[]) {
 	char *logfile = "irwm.log";
 	int lf;
 
 	char *irwmrcname;
 	FILE *irwmrc;
+	char *lircrc = NULL;
 	char line[200], s1[200], s2[200];
 
 	char *displayname = NULL, *fontname = NULL;
@@ -710,7 +716,7 @@ int main(int argn, char *argv[], char *env[]) {
 		}
 		else if (! strcmp(argv[1], "-fn")) {
 			if (argn - 1 < 2) {
-				printf("error: -fontname requires value\n");
+				printf("error: -fn requires value\n");
 				exit(EXIT_FAILURE);
 			}
 			fontname = argv[2];
@@ -726,6 +732,15 @@ int main(int argn, char *argv[], char *env[]) {
 			argn--;
 			argv++;
 		}
+		else if (! strcmp(argv[1], "-lircrc")) {
+			if (argn - 1 < 2) {
+				printf("error: -lircrc requires value\n");
+				exit(EXIT_FAILURE);
+			}
+			lircrc = argv[2];
+			argn--;
+			argv++;
+		}
 		else {
 			if (! ! strcmp(argv[1], "-h"))
 				printf("unrecognized option: %s\n", argv[1]);
@@ -737,6 +752,7 @@ int main(int argn, char *argv[], char *env[]) {
 			printf("\t-q\t\t\tquit when all windows are closed\n");
 			printf("\t-display display\tconnect to server\n");
 			printf("\t-fn font\t\tfont used in lists\n");
+			printf("\t-logfile file\t\tlog to file\n");
 			exit(! strcmp(argv[1], "-h") ?
 				EXIT_SUCCESS : EXIT_FAILURE);
 		}
@@ -797,7 +813,7 @@ int main(int argn, char *argv[], char *env[]) {
 		programs[2].title = NULL;
 		numprograms = 2;
 
-		forkprogram(programs[0].program, NULL, env);
+		forkprogram(programs[0].program, NULL);
 	}
 	else {
 		numprograms = 0;
@@ -807,7 +823,7 @@ int main(int argn, char *argv[], char *env[]) {
 					fontname = strdup(s1);
 			}
 			else if (1 == sscanf(line, "startup %s", s1))
-				forkprogram(s1, NULL, env);
+				forkprogram(s1, NULL);
 			else if (2 == sscanf(line, "program %s %s", s1, s2)) {
 				programs[numprograms].title = strdup(s1);
 				programs[numprograms].program = strdup(s2);
@@ -897,9 +913,11 @@ int main(int argn, char *argv[], char *env[]) {
 		lircclient = -1;
 	}
 	else {
+		printf("forking the lirc client, ");
 		lircclient = fork();
 		if (lircclient == 0)
-			return lirc(root, irwm);
+			return lirc(root, irwm, lircrc);
+		printf("pid=%d\n", lircclient);
 	}
 
 				/* move pointer (for small windows) */
@@ -908,7 +926,7 @@ int main(int argn, char *argv[], char *env[]) {
 
 				/* grab keys */
 
-	for (i = 1; ! ! strcmp(commandstring[i].string, "LISTONLY"); i++)
+	for (i = 1; ! ! strcmp(commandstring[i].string, "ENDGRAB"); i++)
 		XGrabKey(dsp,
 			XKeysymToKeycode(dsp, commandstring[i].keysym),
 			commandstring[i].modifier,
@@ -1109,11 +1127,14 @@ int main(int argn, char *argv[], char *env[]) {
 			printf("\n");
 
 			command = eventtocommand(dsp, ekey);
+			if (command == -1)
+				command = NOCOMMAND;
 			break;
 		case KeyRelease:
 			printf("KeyRelease\n");
 			ekey = evt.xkey;
-			printf("\t0x%lx", ekey.subwindow);
+			printf("\t0x%lx ", ekey.subwindow);
+			printf("key=%d state=%d", ekey.keycode, ekey.state);
 			printf("\n");
 			break;
 
@@ -1209,7 +1230,7 @@ int main(int argn, char *argv[], char *env[]) {
 					p = programs[progselected].program;
 					t = programs[progselected].title;
 					if (p)
-						forkprogram(p, NULL, env);
+						forkprogram(p, NULL);
 					else if (! strcmp(t, "quit"))
 						run = False;
 				}

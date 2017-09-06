@@ -3,17 +3,18 @@
 
 # programs executed on startup
 
-startup /usr/bin/xterm
-startup /usr/bin/xcalc
-startup /usr/bin/xclock
+startup xterm
+startup xcalc
+startup xclock
 
 # the programs that can be executed from the program list
 
-program xterm /usr/bin/xterm
-program xcalc /usr/bin/xcalc
-program xfontsel /usr/bin/xfontsel
-program firefox /usr/bin/firefox
-program opera /usr/bin/opera
+program xterm xterm
+program xcalc xcalc
+program xclock xclock
+program xfontsel xfontsel
+program firefox firefox
+program opera opera
 program quit
 
 # the font to use in the window and programs lists

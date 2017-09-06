@@ -45,6 +45,10 @@ connect to given X server
 \fB-fn \fIfont\fP
 use the given font for the window and program lists
 .TP
+\fB-lircrc \fIfile\fP
+use \fIfile\fP as the lirc configuration file instead of the default
+\fI$HOME/.lircrc\fP
+.TP
 \fB-log \fIlogfile\fP
 log to file \fIlogfile\fP instead of the default "irwm.log";
 pass "-" to log to stdout and "/dev/null" to disable logging
@@ -54,7 +58,7 @@ pass "-" to log to stdout and "/dev/null" to disable logging
 .SH OPERATION
 
 The window manager shows one window at time in full screen. The user can switch
-between them, close one and open new ones. These operations are done via
+among them, close one and open new ones. These operations are done via
 commands received from either a keyboard or a \fBlirc(4)\fP remote. The
 following description only specifies the keystroke that generates each command;
 the section \fBLIRC CONFIGURATION\fP explains how to generate them from remote
@@ -117,7 +121,7 @@ KOWINDOW
 in the list of windows, close the currently active window
 
 .P
-In single key mode (option -s), PANELWINDOW rotates between the window list,
+In single key mode (option -s), PANELWINDOW rotates among the window list,
 the program list and no list. This requires a single key to operate the
 window manager since the keys to move up, move down, select and close can be
 used for other functions when the window and program list are not active.
@@ -130,23 +134,22 @@ On startup, irwm reads \fI$HOME/.irwmrc\fP and, if this file does not exists,
 \fI/etc/irwmrc\fP. An example is:
 
 .nf
-    startup /usr/bin/xterm
-    startup /usr/bin/xcalc
-    startup /usr/bin/xclock
+    startup xterm
+    startup xcalc
+    startup xclock
 
-    program xterm /usr/bin/xterm
-    program xcalc /usr/bin/xcalc
-    program xfontsel /usr/bin/xfontsel
-    program firefox /usr/bin/firefox
+    program xterm xterm
+    program xcalc xcalc
+    program xfontsel xfontsel
+    program firefox firefox
     program quit
 
     font Arial-15:bold
 .fi
 
-A line like "\fIstartup /usr/bin/xterm\fP" makes xterm being executed at
-startup.
+A line like "\fIstartup xterm\fP" makes xterm being executed at startup.
 .
-A line like "\fIprogram fontsel /usr/bin/xfontsel\fP" makes xfontsel being in
+A line like "\fIprogram fontsel xfontsel\fP" makes xfontsel being in
 the list of programs that is shown on PROGSWINDOW (e.g. Control-Tab), so that
 the user can execute it. In both cases, the full path is necessary and no
 argument can be given. The special case "\fIprogram quit\fP" is for an entry in
@@ -155,12 +158,14 @@ the program list to terminate irwm.
 The line "\fIfont Arial-15:bold\fP" tells the font to use in the window and
 program lists.
 .
+Lines starting with '#' are comments.
+.
 .
 .
 .SH LIRC CONFIGURATION
 
 To control irwm from an infrared remote, \fBlircd(8)\fP has to be configured to
-translate some remote keys into the irwm command:
+translate some remote keys into the irwm commands:
 \fINEXTPANEL\fP,
 \fIPREVPANEL\fP,
 \fIQUIT\fP,
@@ -190,7 +195,7 @@ This is done via a \fBlircrc(5)\fP file. As an example,
 
 A begin-end block is required for each key. The prog field is IRWM. The button
 field is the key in the remote (one of the keys in the \fBlircd.conf(5)\fP
-configuration file). The config field is the irwm command (one between
+configuration file). The config field is the irwm command (one among 
 \fINEXTPANEL\fP, \fIPREVPANEL\fP, etc.)
 
 In this example, the red key in the remote makes irwm switch to the next
@@ -212,16 +217,16 @@ second and then switch back to the previous.
 .
 .SH BUGS
 
-No program argument can be specified in the irwmrc file. The full path of
-programs are necessary.
+No program argument can be specified in the irwmrc file.
 
-The lircrc configuration file is always \fI$HOME/.lircrc\fP. No other file can
-be specified in the command line.
+The log file could be specified in the irwmrc file, but this is not currently
+possible because logging begins before opening the irwmrc file.
 
 The keystrokes cannot be changed other than editing the program source.
 
-Window names are assumed to be ascii. They are only updated when the panel list
-window is popped up and when moving in it.
+Window names are assumed to be ascii. They are only updated when the window
+list is popped up and when moving in it. If a window changes its title while
+the window list is active, its title is not updated in it.
 
 There is no provision for ordering windows. Every new window is placed at the
 end of the list. Yet, a program occurring later in \fIirwmrc\fP may show up
@@ -240,12 +245,13 @@ Every time an application tries to map a new top-level window that has neither
 the override_redirect flag nor the transient-for WM hint, irwm reparents it to
 a new window it creates for this purpose. This new window is called a
 \fIpanel\fP in the sources. Its size is the same of the root window, and the
-window it contains is resized to the same size.
+window it contains is resized to that size.
 
 Besides the keyboard and the remote, commands can be given to irwm by sending a
-ClientMessage with type \fI"IRWM"\fP, format 32 and the command number as first
-data to the root window. Actually, this is how lirc keystrokes are translated
-to commands, by a process forked by irwm at startup. The command numbers are:
+ClientMessage with type \fI"IRWM"\fP, format 32 and the command number as its
+first data element to the root window. Actually, this is how lirc keystrokes
+are translated to commands, by a process forked by irwm at startup. The command
+numbers are:
 
 .nf
 #define NOCOMMAND    0		/* no command */

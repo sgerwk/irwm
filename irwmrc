@@ -7,17 +7,17 @@ startup xterm
 startup xcalc
 startup xclock
 
-# the programs that can be executed from the program list
+# programs that can be executed from the program list
 
-program xterm xterm
-program xcalc xcalc
-program xclock xclock
-program xfontsel xfontsel
+program terminal xterm
+program calculator xcalc
+program clock xclock
+program fonts xfontsel
 program firefox firefox
 program opera opera
 program quit
 
-# the font to use in the window and programs lists
+# font to use in the window and programs lists
 
 # font -*-*-*-*-*-*-24-*-*-*-*-*-*-1
 # font Arial-15:bold

@@ -685,7 +685,7 @@ int main(int argn, char *argv[]) {
 	int command;
 	Bool showpanel = False, showprogs = False;
 	int progselected = 0;
-	char *p, *t, *a;
+	char *p, *t;
 
 	XEvent evt;
 	XMapRequestEvent ermap;
@@ -1096,15 +1096,8 @@ int main(int argn, char *argv[]) {
 					printf(" %d", emessage.data.s[i]);
 				break;
 			case 32:
-				for (i = 0; i < 5; i++) {
+				for (i = 0; i < 5; i++)
 					printf(" %ld", emessage.data.l[i]);
-					if (emessage.data.l[i] != 0) {
-						a = XGetAtomName(dsp,
-							emessage.data.l[i]);
-						printf("(%s)", a);
-						XFree(a);
-					}
-				}
 				break;
 			}
 			printf("\n");

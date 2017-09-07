@@ -139,9 +139,9 @@ On startup, irwm reads \fI$HOME/.irwmrc\fP and, if this file does not exists,
     startup xclock
 
     program xterm xterm
-    program xcalc xcalc
-    program xfontsel xfontsel
-    program firefox firefox
+    program calculator xcalc
+    program fonts xfontsel
+    program browser firefox
     program quit
 
     font Arial-15:bold
@@ -149,11 +149,13 @@ On startup, irwm reads \fI$HOME/.irwmrc\fP and, if this file does not exists,
 
 A line like "\fIstartup xterm\fP" makes xterm being executed at startup.
 .
-A line like "\fIprogram fontsel xfontsel\fP" makes xfontsel being in
-the list of programs that is shown on PROGSWINDOW (e.g. Control-Tab), so that
-the user can execute it. In both cases, the full path is necessary and no
-argument can be given. The special case "\fIprogram quit\fP" is for an entry in
+A line like "\fIprogram fonts xfontsel\fP" adds a line "fonts" to
+the list of programs that is shown on PROGSWINDOW (e.g. Control-Tab)
+so the user can execute xfontsel.
+The special case "\fIprogram quit\fP" adds a line in
 the program list to terminate irwm.
+.
+No program argument can be given in a \fIstartup\fP or \fIprogram\fP line.
 .
 The line "\fIfont Arial-15:bold\fP" tells the font to use in the window and
 program lists.

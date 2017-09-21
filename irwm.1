@@ -39,6 +39,19 @@ quit when the last window is closed
 -s
 single key mode (see below)
 .TP
+.B
+-r
+switch to window by raising it over the others; from the point of view of the
+program controlling the previous window, its window is still on the screen,
+even if it is fully covered by the new one; this is the default, and is also
+necessary to make gimp(1) work in irwm
+.TP
+.B
+-u
+switch to window by mapping it, raising it over the others and unmapping the
+previous; the program controlling the previous window perceives the change as
+an iconization
+.TP
 \fB-display \fIdisplay\fP
 connect to given X server
 .TP
@@ -238,7 +251,8 @@ If a specific application such as \fBvdr(1)\fP is supposed to always be
 presented to the user at start-up, it has to be the only one launched by
 irwmrc. The user may then run other applications via the program list
 (\fIPROGSWINDOW\fP).
-.
+
+In raise mode, the WM_STATE should change to NormalState only if not already.
 .
 .
 .SH INTERNALS

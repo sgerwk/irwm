@@ -289,12 +289,13 @@ int forkprogram(char *path, char *arg) {
  */
 #define MAXPANELS 1000
 struct {
-	Window panel;			/* container for a window */
-	Window content;			/* a window created by some program */
-	char *name;			/* name of the window */
+	Window panel;		/* container for a window */
+	Window content;		/* a window created by some program */
+	char *name;		/* name of the window */
 } panel[MAXPANELS];
 int numpanels = 0;
 int activepanel = -1;
+Bool unmaponleave = False;	/* unmap window when switching to another */
 
 /*
  * print data of a panel
@@ -407,6 +408,9 @@ int panelremove(Display *dsp, int pn) {
 void panelleave(Display *dsp) {
 	panelprint("LEAVE", activepanel);
 
+	if (! unmaponleave)
+		return;
+
 	XUnmapWindow(dsp, panel[activepanel].panel);
 	XUnmapWindow(dsp, panel[activepanel].content);
 
@@ -457,7 +461,7 @@ struct {
 int numprograms = 0;
 
 /*
- * the windows irwm draws in: the panel list and the program list
+ * the control windows of draws: the panel list and the program list
  */
 typedef struct {
 	Window window;
@@ -707,6 +711,10 @@ int main(int argn, char *argv[]) {
 			quitonlastclose = True;
 		else if (! strcmp(argv[1], "-s"))
 			singlekey = True;
+		else if (! strcmp(argv[1], "-u"))
+			unmaponleave = True;
+		else if (! strcmp(argv[1], "-r"))
+			unmaponleave = False;
 		else if (! strcmp(argv[1], "-display")) {
 			if (argn - 1 < 2) {
 				printf("error: -display requires value\n");
@@ -752,6 +760,8 @@ int main(int argn, char *argv[]) {
 			printf("options:\n");
 			printf("\t-l\t\t\tuse lirc for input\n");
 			printf("\t-q\t\t\tquit when all windows are closed\n");
+			printf("\t-r\t\t\tswitch to window by raising it\n");
+			printf("\t-u\t\t\tswitch by unmapping previous\n");
 			printf("\t-display display\tconnect to server\n");
 			printf("\t-fn font\t\tfont used in lists\n");
 			printf("\t-logfile file\t\tlog to file\n");

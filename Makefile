@@ -21,5 +21,5 @@ irwm: LDLIBS+=-llirc_client
 irwm: LDLIBS+=-lXft
 
 clean:
-	rm -f $(PROGS) *~
+	rm -f $(PROGS) *~ irwm.log
 

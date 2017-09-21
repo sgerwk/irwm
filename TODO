@@ -1,0 +1,19 @@
+- number list items, then jump directly upon number keypress on remote or
+  keyboard
+
+- maintain an history of windows, or at least of the most recent window; return
+  to that when the next window is closed
+
+- gimp, for example the "new image" dialog
+
+  the problem is that the dialog is opened as a new window, but it has neither
+  the override_redirect flag not the WM_TRANSIENT_FOR property; when irwm
+  unmaps the gimp window is unmapped to switch to the dialog, gimp unmaps the
+  dialog itself
+
+  a solution is to to never unmap (iconize) windows but just to raise the one
+  to be shown; this can be done by commenting out the two XUnmapWindow in
+  panelleave()
+
+- log all properties of new windows, upon CreateNotify or MapNotify
+

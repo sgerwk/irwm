@@ -6,3 +6,6 @@
 
 - log all properties of new windows, upon CreateNotify or MapNotify
 
+- add an help window that explains the key to use; show it for 1-2 second upon
+  startup
+

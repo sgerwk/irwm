@@ -346,6 +346,7 @@ void panelname(Display *dsp, int pn) {
  * create a new panel for a window
  */
 int paneladd(Display *dsp, Window root, Window win, XWindowAttributes *wa) {
+	int e;
 	Window p;
 	char name[40];
 
@@ -355,10 +356,10 @@ int paneladd(Display *dsp, Window root, Window win, XWindowAttributes *wa) {
 		return -1;
 	}
 
-	if (panelfind(win, PANEL | CONTENT) != -1) {
-		printf("IRWM WARNING: window 0x%lx already exists, ", win);
-		printf("ignoring mapping request\n");
-		return -1;
+	e = panelfind(win, PANEL | CONTENT);
+	if (e != -1) {
+		printf("IRWM NOTE: window 0x%lx already exists\n", win);
+		return e;
 	}
 
 	p = XCreateSimpleWindow(dsp, root, wa->x, wa->y, wa->width, wa->height,
@@ -422,6 +423,7 @@ void panelenter(Display *dsp) {
 
 	XMapWindow(dsp, panel[activepanel].content);
 	XMapWindow(dsp, panel[activepanel].panel);
+	XRaiseWindow(dsp, panel[activepanel].panel);
 
 	data[0] = NormalState;
 	data[1] = None;
@@ -663,7 +665,7 @@ int main(int argn, char *argv[]) {
 
 	char *displayname = NULL, *fontname = NULL;
 	Display *dsp;
-	Window root;
+	Window root, win;
 	XWindowAttributes rwa;
 	GC gc;
 	XGCValues gcv;
@@ -951,6 +953,8 @@ int main(int argn, char *argv[]) {
 			ermap = evt.xmaprequest;
 			printf("\t0x%lx", ermap.window);
 			printf(" 0x%lx", ermap.parent);
+			if (XGetTransientForHint(dsp, ermap.window, &win))
+				printf("transient_for=%lx\n", win);
 			printf("\n");
 
 			pn = paneladd(dsp, root, ermap.window, &rwa);
@@ -1018,6 +1022,8 @@ int main(int argn, char *argv[]) {
 			printf("CreateNotify\n");
 			printf("\t0x%lx ", evt.xcreatewindow.window);
 			printf("parent=0x%lx", evt.xcreatewindow.parent);
+			if (evt.xcreatewindow.override_redirect)
+				printf(" override_redirect");
 			printf("\n");
 			break;
 		case DestroyNotify:

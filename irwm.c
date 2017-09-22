@@ -403,6 +403,16 @@ int panelremove(Display *dsp, int pn) {
 }
 
 /*
+ * resize the current panel
+ */
+void panelresize(Display *dsp, XWindowAttributes base) {
+	if (activepanel == -1)
+		return;
+	XMoveResizeWindow(dsp, panel[activepanel].content,
+		base.x, base.y, base.width, base.height);
+}
+
+/*
  * leave the current panel
  */
 void panelleave(Display *dsp) {
@@ -971,12 +981,10 @@ int main(int argn, char *argv[]) {
 			if (pn == -1)
 				break;
 
-			XMoveResizeWindow(dsp, ermap.window,
-				0, 0, rwa.width, rwa.height);
-
 			if (activepanel != -1)
 				panelleave(dsp);
 			activepanel = pn;
+			panelresize(dsp, rwa);
 			panelenter(dsp);
 			raiselists(dsp, &panelwindow, &progswindow);
 			break;
@@ -993,8 +1001,7 @@ int main(int argn, char *argv[]) {
 
 			if (panelfind(erconfigure.window, PANEL) != -1 ||
 			    panelfind(erconfigure.window, CONTENT) != -1) {
-				XMoveResizeWindow(dsp, erconfigure.window,
-					0, 0, rwa.width, rwa.height);
+				panelresize(dsp, rwa);
 				break;
 			}
 
@@ -1240,6 +1247,8 @@ int main(int argn, char *argv[]) {
 					t = programs[progselected].title;
 					if (p)
 						forkprogram(p, NULL);
+					else if (! strcmp(t, "resize"))
+						panelresize(dsp, rwa);
 					else if (! strcmp(t, "quit"))
 						run = False;
 				}

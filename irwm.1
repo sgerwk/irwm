@@ -41,16 +41,12 @@ single key mode (see below)
 .TP
 .B
 -r
-switch to window by raising it over the others; from the point of view of the
-program controlling the previous window, its window is still on the screen,
-even if it is fully covered by the new one; this is the default, and is also
-necessary to make gimp(1) work in irwm
+raise mode (see INTERNALS, below); this is the default, and is also necessary
+to make gimp(1) work in irwm
 .TP
 .B
 -u
-switch to window by unmapping the previous, mapping the new one and raising it
-over the others; the program controlling the previous window perceives the
-change as an iconization
+unmap mode (see INTERNALS, below)
 .TP
 \fB-display \fIdisplay\fP
 connect to given X server
@@ -155,24 +151,27 @@ On startup, irwm reads \fI$HOME/.irwmrc\fP and, if this file does not exists,
     program calculator xcalc
     program fonts xfontsel
     program browser firefox
+    program resize
     program quit
 
     font Arial-15:bold
 .fi
 
 A line like "\fIstartup xterm\fP" makes xterm being executed at startup.
-.
-A line like "\fIprogram fonts xfontsel\fP" adds a line "fonts" to
+
+A line like "\fIprogram calculator xcalc\fP" adds a line "calculator" to
 the list of programs that is shown on PROGSWINDOW (e.g. Control-Tab)
-so the user can execute xfontsel.
-The special case "\fIprogram quit\fP" adds a line in
-the program list to terminate irwm.
-.
+so the user can execute xcalc.
+If the keyword "\fIprogram\fP" is followed by one word instead of two, it is
+a command to irwm itself, either \fIresize\fP (which makes the current
+window as large as the screen, in case it dared making itself smaller) and
+\fIquit\fP (to terminate irwm).
+
 No program argument can be given in a \fIstartup\fP or \fIprogram\fP line.
-.
+
 The line "\fIfont Arial-15:bold\fP" tells the font to use in the window and
 program lists.
-.
+
 Lines starting with '#' are comments.
 .
 .
@@ -285,6 +284,11 @@ numbers are:
 #define KOWINDOW    24		/* close the current window */
 .fi
 
+When switching to a new panel, irwm either unmaps the previous or just covers
+it with the new one; these are the unmap (-u) and raise (-r) modes. In the
+first case, the program controlling the previous window perceives a change
+similar to an iconization; in the second, it perceives as if the user has just
+selected a different window but the previous is still on the screen.
 .
 .
 .

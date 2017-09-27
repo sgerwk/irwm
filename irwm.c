@@ -840,7 +840,9 @@ int main(int argn, char *argv[]) {
 	else {
 		numprograms = 0;
 		while (fgets(line, 100, irwmrc)) {
-			if (1 == sscanf(line, "font %s", s1)) {
+			if (1 == sscanf(line, "echo %[^\n]", s1))
+				printf("%s\n", s1);
+			else if (1 == sscanf(line, "font %s", s1)) {
 				if (fontname == NULL)
 					fontname = strdup(s1);
 			}

@@ -789,6 +789,7 @@ int main(int argn, char *argv[]) {
 		if (lf == -1)
 			perror(logfile);
 		else {
+			fprintf(stderr, "logging to %s\n", logfile);
 			dup2(lf, STDOUT_FILENO);
 			dup2(lf, STDERR_FILENO);
 		}

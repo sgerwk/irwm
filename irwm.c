@@ -581,9 +581,9 @@ void drawlist(Display *dsp, ListWindow *lw,
 void drawpanel(Display *dsp, ListWindow *lw, int activepanel) {
 	int i;
 	char **elements;
-	char *help[] = {"enter:  ok",
+	char *help[] = {"enter: ok",
 			"escape: ok",
-			"c:      close window",
+			"c: close window",
 			NULL};
 
 	elements = malloc((numpanels + 1) * sizeof(char *));
@@ -607,7 +607,7 @@ void drawpanel(Display *dsp, ListWindow *lw, int activepanel) {
 void drawprogs(Display *dsp, ListWindow *lw, int selected) {
 	int i;
 	char **elements;
-	char *help[] = {"enter:  run",
+	char *help[] = {"enter: run",
 			"escape: close",
 			NULL};
 

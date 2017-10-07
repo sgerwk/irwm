@@ -37,6 +37,7 @@
  *   HIDEWINDOW		hide window
  *   OKWINDOW		select the current item in the window
  *   KOWINDOW		only in the panel list window: close the current panel
+ *   ENDWINDOW		only in the panel list window: move panel at end
  *
  * details on configuring and testing lirc are in file lircrd
  */
@@ -113,6 +114,7 @@
 #define HIDEWINDOW  22		/* hide both windows */
 #define OKWINDOW    23		/* select the current item in the window */
 #define KOWINDOW    24		/* close currently selected panel */
+#define ENDWINDOW   25		/* move currently active panel at the end */
 
 /*
  * commands, their names and keystrokes
@@ -132,6 +134,7 @@ struct {
 	{HIDEWINDOW,	"HIDEWINDOW",	XK_Escape,	0},
 	{OKWINDOW,	"OKWINDOW",	XK_Return,	0},
 	{KOWINDOW,	"KOWINDOW",	XK_c,		0},
+	{ENDWINDOW,	"ENDWINDOW",	XK_e,		0},
 	{-1,		NULL,		XK_VoidSymbol,	0}
 };
 char *commandtostring(int command) {
@@ -288,7 +291,7 @@ int forkprogram(char *path, char *arg) {
  * the panels and their contents
  */
 #define MAXPANELS 1000
-struct {
+struct panel {
 	Window panel;		/* container for a window */
 	Window content;		/* a window created by some program */
 	char *name;		/* name of the window */
@@ -398,6 +401,24 @@ int panelremove(Display *dsp, int pn) {
 		panel[i - 1] = panel[i];
 
 	numpanels--;
+
+	return 0;
+}
+
+/*
+ * swap panels
+ */
+int panelswap(int pn1, int pn2) {
+	struct panel temp;
+
+	if (pn1 == -1 || pn1 > numpanels - 2)
+		return -1;
+	if (pn2 == -1 || pn2 > numpanels - 1)
+		return -1;
+
+	temp = panel[pn2];
+	panel[pn2] = panel[pn1];
+	panel[pn1] = temp;
 
 	return 0;
 }
@@ -584,6 +605,7 @@ void drawpanel(Display *dsp, ListWindow *lw, int activepanel) {
 	char *help[] = {"enter: ok",
 			"escape: ok",
 			"c: close window",
+			"e: move window at end",
 			NULL};
 
 	elements = malloc((numpanels + 1) * sizeof(char *));
@@ -651,10 +673,12 @@ void closewindow(Display *dsp, Window win) {
 	}
 
 	if (! delete) {
+		printf("xkillclient 0x%lx\n", win);
 		XKillClient(dsp, win);
 		return;
 	}
 
+	printf("wm_delete_window message to 0x%lx\n", win);
 	memset(&message, 0, sizeof(message));
 	message.type = ClientMessage;
 	message.xclient.window = win;
@@ -882,7 +906,7 @@ int main(int argn, char *argv[]) {
 #endif
 
 	listwidth = rwa.width / 4;
-	listheight = 15 * (font->ascent + font->descent + PADDING * 2) +
+	listheight = 16 * (font->ascent + font->descent + PADDING * 2) +
 		PADDING * 2 * 2 + MARGIN * 2;
 
 				/* panel list window */
@@ -1260,6 +1284,17 @@ int main(int argn, char *argv[]) {
 		case KOWINDOW:
 			if (showpanel && activepanel != -1)
 				closewindow(dsp, panel[activepanel].content);
+			break;
+		case ENDWINDOW:
+			if (showpanel &&
+			    activepanel != -1 &&
+			    activepanel < numpanels - 1) {
+				panelswap(activepanel, numpanels - 1);
+				activepanel = numpanels - 1;
+				XClearArea(dsp, panelwindow.window,
+					0, 0, 0, 0, True);
+				XRaiseWindow(dsp, panelwindow.window);
+			}
 			break;
 		}
 

@@ -94,7 +94,7 @@ PANELWINDOW
 (Alt-Tab)
 show the list of windows currently open; the user can move by UPWINDOW and
 DOWNWINDOW, close the list by HIDEWINDOW, OKWINDOW or PANELWINDOW again, close
-a window by KOWINDOW
+a window by KOWINDOW, move it at the end by ENDWINDOW
 .TP
 .I
 PROGSWINDOW
@@ -128,6 +128,11 @@ the program
 KOWINDOW
 (c)
 in the list of windows, close the currently active window
+.TP
+.I
+ENDWINDOW
+(e)
+in the list of windows, move the currently active window at the end
 
 .P
 In single key mode (option -s), PANELWINDOW rotates among the window list,
@@ -192,8 +197,9 @@ translate some remote keys into the irwm commands:
 \fIUPWINDOW\fP,
 \fIDOWNWINDOW\fP,
 \fIHIDEWINDOW\fP,
-\fIOKWINDOW\fP and
-\fIKOWINDOW\fP.
+\fIOKWINDOW\fP,
+\fIKOWINDOW\fP, and
+\fIENDWINDOW\fP.
 This is done via a \fBlircrc(5)\fP file. As an example,
 \fI~/.lircrc\fP may contain:
 
@@ -286,6 +292,7 @@ numbers are:
 #define HIDEWINDOW  22		/* hide both lists */
 #define OKWINDOW    23		/* select the current item in the list */
 #define KOWINDOW    24		/* close the current window */
+#define ENDWINDOW   25		/* move currently active panel at the end */
 .fi
 
 When switching to a new panel, irwm either unmaps the previous or just covers

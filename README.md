@@ -16,7 +16,7 @@ It can be controlled via the keyboard:
 
 - alt-right: next window
 - alt-left: previous window
-- alt-tab: list of currently open windows, key 'c' to close one
+- alt-tab: list of currently open windows, key 'c'=close, e='move to end'
 - ctrl-tab: list of programs the user can launch
 - ctrl-shift-tab: quit
 

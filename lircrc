@@ -62,3 +62,9 @@ begin
 	config = KOWINDOW
 end
 
+begin
+	prog = IRWM
+	button = KEY_9
+	config = ENDWINDOW
+end
+

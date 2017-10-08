@@ -539,13 +539,18 @@ void drawarrow(Display* dsp, ListWindow *lw, int *y, Bool draw, Bool up) {
 	int x1 = lw->width * 1 / 4;
 	int x2 = lw->width * 2 / 4;
 	int x3 = lw->width * 3 / 4;
-	
+	XPoint ps[3];
+
 	*y += PADDING + lw->font->ascent;
 	if (draw) {
-		XDrawLine(dsp, lw->window, lw->gc,
-			up ? x1 : x2, *y, up ? x2 : x3, *y - lw->font->ascent);
-		XDrawLine(dsp, lw->window, lw->gc,
-			up ? x2 : x1, *y - lw->font->ascent, up ? x3 : x2, *y);
+		ps[0].x = x1;
+		ps[0].y = *y - (up ? 0 : lw->font->ascent);
+		ps[1].x = x2;
+		ps[1].y = *y - (up ? lw->font->ascent : 0);
+		ps[2].x = x3;
+		ps[2].y = ps[0].y;
+		ps[3] = ps[0];
+		XDrawLines(dsp, lw->window, lw->gc, ps, 4, CoordModeOrigin);
 	}
 	*y += lw->font->descent + PADDING;
 }

@@ -295,6 +295,7 @@ struct panel {
 	Window panel;		/* container for a window */
 	Window content;		/* a window created by some program */
 	char *name;		/* name of the window */
+	Window leader;		/* group leader, or None */
 } panel[MAXPANELS];
 int numpanels = 0;
 int activepanel = -1;
@@ -349,7 +350,8 @@ void panelname(Display *dsp, int pn) {
 /*
  * create a new panel for a window
  */
-int paneladd(Display *dsp, Window root, Window win, XWindowAttributes *wa) {
+int paneladd(Display *dsp, Window root, Window win, XWindowAttributes *wa,
+		Window leader) {
 	int e;
 	Window p;
 	char name[40];
@@ -378,6 +380,7 @@ int paneladd(Display *dsp, Window root, Window win, XWindowAttributes *wa) {
 	panel[numpanels].content = win;
 	panel[numpanels].name = NULL;
 	panelname(dsp, numpanels);
+	panel[numpanels].leader = leader;
 
 	panelprint("CREATE", numpanels);
 
@@ -388,19 +391,27 @@ int paneladd(Display *dsp, Window root, Window win, XWindowAttributes *wa) {
  * remove a panel
  */
 int panelremove(Display *dsp, int pn) {
-	int i;
+	int i, j;
+	Window c;
 
 	panelprint("DESTROY", pn);
 	if (pn < 0 || pn >= numpanels)
 		return -1;
+	c = panel[pn].content;
 
-	XDestroyWindow(dsp, panel[pn].panel);
-	free(panel[pn].name);
+	j = 0;
+	for (i = 0; i < numpanels; i++) {
+		if (i == pn || panel[i].leader == c) {
+			free(panel[i].name);
+			XDestroyWindow(dsp, panel[i].panel);
+			continue;
+		}
+		if (j != i)
+			panel[j] = panel[i];
+		j++;
+	}
 
-	for (i = pn + 1; i < numpanels; i++)
-		panel[i - 1] = panel[i];
-
-	numpanels--;
+	numpanels = j;
 
 	return 0;
 }
@@ -724,6 +735,7 @@ int main(int argn, char *argv[]) {
 	int pn;
 	char *message;
 	int i;
+	Bool tran;
 
 	Bool uselirc = False, quitonlastclose = False, singlekey = False;
 	Bool run;
@@ -1003,13 +1015,15 @@ int main(int argn, char *argv[]) {
 		case MapRequest:
 			printf("MapRequest\n");
 			ermap = evt.xmaprequest;
+			tran = XGetTransientForHint(dsp, ermap.window, &win);
 			printf("\t0x%lx", ermap.window);
-			printf(" 0x%lx", ermap.parent);
-			if (XGetTransientForHint(dsp, ermap.window, &win))
-				printf("transient_for=%lx\n", win);
+			printf(" parent=0x%lx", ermap.parent);
+			if (tran)
+				printf(" transient_for=0x%lx", win);
 			printf("\n");
 
-			pn = paneladd(dsp, root, ermap.window, &rwa);
+			pn = paneladd(dsp, root, ermap.window, &rwa,
+				tran ? win : None);
 			if (pn == -1)
 				break;
 

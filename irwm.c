@@ -539,7 +539,7 @@ void drawarrow(Display* dsp, ListWindow *lw, int *y, Bool draw, Bool up) {
 	int x1 = lw->width * 1 / 4;
 	int x2 = lw->width * 2 / 4;
 	int x3 = lw->width * 3 / 4;
-	XPoint ps[3];
+	XPoint ps[4];
 
 	*y += PADDING + lw->font->ascent;
 	if (draw) {

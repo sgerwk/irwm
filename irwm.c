@@ -1079,7 +1079,7 @@ int main(int argn, char *argv[]) {
 			printf("DestroyNotify\n");
 			edestroy = evt.xdestroywindow;
 			printf("\t0x%lx ", edestroy.window);
-			printf("0x%lx", edestroy.event);
+			printf("parent=0x%lx", edestroy.event);
 			printf("\n");
 
 			pn = panelfind(edestroy.event, PANEL);
@@ -1116,7 +1116,7 @@ int main(int argn, char *argv[]) {
 		case MapNotify:
 			printf("MapNotify\n");
 			printf("\t0x%lx", evt.xmap.window);
-			printf(" 0x%lx", evt.xmap.event);
+			printf(" parent=0x%lx", evt.xmap.event);
 			printf("\n");
 			break;
 		case ReparentNotify:

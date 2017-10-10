@@ -1,3 +1,9 @@
+- commands UPWINDOW and DOWNWINDOW to move the currently active window up or
+  down in the list; currently only ENDWINDOW(e) allows moving a window; also
+  STARTWINDOW could be useful
+
+- do not show windows that unmapped themselves
+
 - number list items, then jump directly upon number keypress on remote or
   keyboard
 

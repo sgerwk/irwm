@@ -441,7 +441,7 @@ void panelresize(Display *dsp, XWindowAttributes base) {
 	if (activepanel == -1)
 		return;
 	XMoveResizeWindow(dsp, panel[activepanel].content,
-		base.x, base.y, base.width, base.height);
+		0, 0, base.width, base.height);
 }
 
 /*

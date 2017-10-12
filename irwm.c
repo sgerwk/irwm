@@ -720,7 +720,7 @@ int main(int argn, char *argv[]) {
 	char *displayname = NULL, *fontname = NULL;
 	Display *dsp;
 	Window root, win;
-	XWindowAttributes rwa;
+	XWindowAttributes rwa, *irwa = NULL;
 	GC gc;
 	XGCValues gcv;
 #ifndef XFT
@@ -775,6 +775,18 @@ int main(int argn, char *argv[]) {
 			argn--;
 			argv++;
 		}
+		else if (! strcmp(argv[1], "-geometry")) {
+			if (argn - 1 < 2) {
+				printf("error: -geometry requires value\n");
+				exit(EXIT_FAILURE);
+			}
+			irwa = malloc(sizeof(XWindowAttributes));
+			sscanf(argv[2], "%dx%d+%d+%d",
+				&irwa->width, &irwa->height,
+				&irwa->x, &irwa->y);
+			argn--;
+			argv++;
+		}
 		else if (! strcmp(argv[1], "-fn")) {
 			if (argn - 1 < 2) {
 				printf("error: -fn requires value\n");
@@ -814,6 +826,7 @@ int main(int argn, char *argv[]) {
 			printf("\t-r\t\t\tswitch to window by raising it\n");
 			printf("\t-u\t\t\tswitch by unmapping previous\n");
 			printf("\t-display display\tconnect to server\n");
+			printf("\t-geometry WxH+X+Y\tgeometry of windows\n");
 			printf("\t-fn font\t\tfont used in lists\n");
 			printf("\t-logfile file\t\tlog to file\n");
 			exit(! strcmp(argv[1], "-h") ?
@@ -851,6 +864,14 @@ int main(int argn, char *argv[]) {
 	root = DefaultRootWindow(dsp);
 	XGetWindowAttributes(dsp, root, &rwa);
 	printf("root: 0x%lx (%dx%d)\n", root, rwa.width, rwa.height);
+	if (irwa) {
+		rwa.width = irwa->width;
+		rwa.height = irwa->height;
+		rwa.x = irwa->x;
+		rwa.y = irwa->y;
+		free(irwa);
+	}
+	printf("geometry: %dx%d+%d+%d\n", rwa.width, rwa.height, rwa.x, rwa.y);
 
 	XSelectInput(dsp, root,
 		SubstructureRedirectMask |

@@ -406,6 +406,8 @@ int panelremove(Display *dsp, int pn) {
 			panelprint("DESTROY", i);
 			free(panel[i].name);
 			XDestroyWindow(dsp, panel[i].panel);
+			if (activepanel >= j)
+				activepanel--;
 			continue;
 		}
 		if (j != i)
@@ -1137,15 +1139,8 @@ int main(int argn, char *argv[]) {
 
 			panelremove(dsp, pn);
 
-			if (numpanels > 0) {
-				if (activepanel > pn)
-					activepanel--;
-				else if (activepanel == pn) {
-					if (activepanel >= numpanels)
-						activepanel = numpanels - 1;
-					panelenter(dsp);
-				}
-			}
+			if (numpanels > 0)
+				panelenter(dsp);
 			else if (quitonlastclose) {
 				run = False;
 				break;

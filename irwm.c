@@ -475,6 +475,12 @@ void panelenter(Display *dsp) {
 
 	panelprint("ENTER", activepanel);
 
+	if (activepanel >= numpanels) {
+		printf("WARNING: activepanel=%d not less than numpanels=%d\n",
+			activepanel, numpanels);
+		return;
+	}
+
 	XMapWindow(dsp, panel[activepanel].content);
 	XMapWindow(dsp, panel[activepanel].panel);
 	XRaiseWindow(dsp, panel[activepanel].panel);

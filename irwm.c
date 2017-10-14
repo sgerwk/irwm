@@ -395,7 +395,7 @@ int panelremove(Display *dsp, int pn) {
 	int i, j;
 	Window c;
 
-	panelprint("DESTROY", pn);
+	panelprint("REMOVE", pn);
 	if (pn < 0 || pn >= numpanels)
 		return -1;
 	c = panel[pn].content;
@@ -403,6 +403,7 @@ int panelremove(Display *dsp, int pn) {
 	j = 0;
 	for (i = 0; i < numpanels; i++) {
 		if (i == pn || panel[i].leader == c) {
+			panelprint("DESTROY", i);
 			free(panel[i].name);
 			XDestroyWindow(dsp, panel[i].panel);
 			continue;

@@ -450,6 +450,9 @@ void panelresize(Display *dsp, XWindowAttributes base) {
  * leave the current panel
  */
 void panelleave(Display *dsp) {
+	if (activepanel == -1)
+		return;
+
 	panelprint("LEAVE", activepanel);
 
 	if (! unmaponleave)
@@ -466,6 +469,9 @@ void panelleave(Display *dsp) {
  */
 void panelenter(Display *dsp) {
 	long data[2];
+
+	if (activepanel == -1)
+		return;
 
 	panelprint("ENTER", activepanel);
 

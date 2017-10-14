@@ -306,6 +306,7 @@ Bool unmaponleave = False;	/* unmap window when switching to another */
  */
 void panelprint(char *type, int pn) {
 	printf("PANEL %d %-10.10s ", pn, type);
+	printf("%s ", pn == activepanel ? "*" : " ");
 	printf("panel=0x%lx ", panel[pn].panel);
 	printf("content=0x%lx ", panel[pn].content);
 	printf("title=%s", panel[pn].name);

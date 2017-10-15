@@ -406,7 +406,7 @@ int panelremove(Display *dsp, int pn) {
 			panelprint("DESTROY", i);
 			free(panel[i].name);
 			XDestroyWindow(dsp, panel[i].panel);
-			if (activepanel >= j)
+			if (activepanel >= j && activepanel > 0)
 				activepanel--;
 			continue;
 		}
@@ -416,6 +416,8 @@ int panelremove(Display *dsp, int pn) {
 	}
 
 	numpanels = j;
+	if (numpanels == 0)
+		activepanel = -1;
 
 	return 0;
 }

@@ -1159,12 +1159,6 @@ int main(int argn, char *argv[]) {
 		case GravityNotify:
 			printf("GravityNotify\n");
 			break;
-		case MapNotify:
-			printf("MapNotify\n");
-			printf("\t0x%lx", evt.xmap.window);
-			printf(" parent=0x%lx", evt.xmap.event);
-			printf("\n");
-			break;
 		case ReparentNotify:
 			printf("ReparentNotify\n");
 			ereparent = evt.xreparent;
@@ -1173,10 +1167,47 @@ int main(int argn, char *argv[]) {
 				printf("away from 0x%lx, ", ereparent.event);
 			printf("to 0x%lx\n", ereparent.parent);
 			break;
+		case MapNotify:
+			printf("MapNotify\n");
+			printf("\t0x%lx", evt.xmap.window);
+			printf(" parent=0x%lx", evt.xmap.event);
+			printf("\n");
+
+			pn = panelfind(evt.xunmap.window, CONTENT);
+			if (pn == -1 || pn == activepanel)
+				break;
+			panelleave(dsp);
+			activepanel = pn;
+			panelenter(dsp);
+			raiselists(dsp, &panelwindow, &progswindow);
+
+			break;
 		case UnmapNotify:
 			printf("UnmapNotify\n");
 			printf("\t0x%lx", evt.xunmap.window);
+			printf(" parent=0x%lx", evt.xmap.event);
 			printf("\n");
+
+			pn = panelfind(evt.xunmap.window, CONTENT);
+			if (pn == -1)
+				break;
+			printf("\tcontent in panel %d\n", pn);
+
+			win = panel[pn].leader;
+			if (win == None)
+				break;
+			printf("\tleader is 0x%lx\n", win);
+
+			pn = panelfind(win, CONTENT);
+			if (pn == -1 || pn == activepanel)
+				break;
+
+			printf("\tswitching to %d\n", pn);
+			panelleave(dsp);
+			activepanel = pn;
+			panelenter(dsp);
+			raiselists(dsp, &panelwindow, &progswindow);
+
 			break;
 		case ClientMessage:
 			printf("ClientMessage\n");

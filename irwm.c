@@ -1187,7 +1187,8 @@ int main(int argn, char *argv[]) {
 		case UnmapNotify:
 			printf("UnmapNotify\n");
 			printf("\t0x%lx", evt.xunmap.window);
-			printf(" parent=0x%lx", evt.xmap.event);
+			printf(" parent=0x%lx", evt.xunmap.event);
+			printf(" %s", evt.xunmap.send_event ? "synthetic" : "");
 			printf("\n");
 
 			pn = panelfind(evt.xunmap.window, CONTENT);

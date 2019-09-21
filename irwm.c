@@ -174,8 +174,10 @@ Atom wm_state, wm_protocols, wm_delete_window;
  * the lirc client
  */
 #ifndef LIRC
-int lirc(Window __attribute__((unused)) root,
-         Atom __attribute__((unused)) irwm) {
+int lirc(Window root, Atom irwm, char *lircrc) {
+	(void) root;
+	(void) irwm;
+	(void) lircrc;
 	return EXIT_FAILURE;
 }
 #else

@@ -1197,6 +1197,10 @@ int main(int argn, char *argv[]) {
 			printf("\tcontent in panel %d\n", pn);
 
 			win = panel[pn].leader;
+
+			if (evt.xunmap.send_event)
+				panelremove(dsp, pn);
+
 			if (win == None)
 				break;
 			printf("\tleader is 0x%lx\n", win);

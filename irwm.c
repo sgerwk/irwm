@@ -301,6 +301,7 @@ struct panel {
 } panel[MAXPANELS];
 int numpanels = 0;
 int activepanel = -1;
+Window withdrawn;		/* parent of withdrawn content windows */
 Bool unmaponleave = False;	/* unmap window when switching to another */
 
 /*
@@ -393,7 +394,7 @@ int paneladd(Display *dsp, Window root, Window win, XWindowAttributes *wa,
 /*
  * remove a panel
  */
-int panelremove(Display *dsp, int pn) {
+int panelremove(Display *dsp, int pn, int destroycontent) {
 	int i, j;
 	Window c;
 
@@ -406,6 +407,9 @@ int panelremove(Display *dsp, int pn) {
 	for (i = 0; i < numpanels; i++) {
 		if (i == pn || panel[i].leader == c) {
 			panelprint("DESTROY", i);
+			if (! destroycontent)
+				XReparentWindow(dsp, panel[i].content,
+					withdrawn, 0, 0);
 			free(panel[i].name);
 			XDestroyWindow(dsp, panel[i].panel);
 			if (activepanel >= j && activepanel > 0)
@@ -892,6 +896,7 @@ int main(int argn, char *argv[]) {
 		free(irwa);
 	}
 	printf("geometry: %dx%d+%d+%d\n", rwa.width, rwa.height, rwa.x, rwa.y);
+	withdrawn = root;
 
 	XSelectInput(dsp, root,
 		SubstructureRedirectMask |
@@ -1141,7 +1146,7 @@ int main(int argn, char *argv[]) {
 			if (pn == -1)
 				break;
 
-			panelremove(dsp, pn);
+			panelremove(dsp, pn, True);
 
 			if (numpanels > 0)
 				panelenter(dsp);
@@ -1199,7 +1204,7 @@ int main(int argn, char *argv[]) {
 			win = panel[pn].leader;
 
 			if (evt.xunmap.send_event)
-				panelremove(dsp, pn);
+				panelremove(dsp, pn, False);
 
 			if (win == None)
 				break;

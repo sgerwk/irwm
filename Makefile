@@ -9,7 +9,7 @@ install: all
 	mkdir -p $(DESTDIR)/usr/share/man/man1
 	cp $(MANS) $(DESTDIR)/usr/share/man/man1
 
-CFLAGS=-Wall -Wextra
+CFLAGS=-g -Wall -Wextra
 
 CFLAGS+=-I/usr/X11R6/include
 LDFLAGS+=-L/usr/X11R6/lib

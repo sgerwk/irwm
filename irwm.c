@@ -298,10 +298,11 @@ struct panel {
 	Window content;		/* a window created by some program */
 	char *name;		/* name of the window */
 	Window leader;		/* group leader, or None */
+	Bool withdrawn;		/* content is withdrawn by program */
 } panel[MAXPANELS];
 int numpanels = 0;
+int numactive = 0;
 int activepanel = -1;
-Window withdrawn;		/* parent of withdrawn content windows */
 Bool unmaponleave = False;	/* unmap window when switching to another */
 
 /*
@@ -385,17 +386,19 @@ int paneladd(Display *dsp, Window root, Window win, XWindowAttributes *wa,
 	panel[numpanels].name = NULL;
 	panelname(dsp, numpanels);
 	panel[numpanels].leader = leader;
+	panel[numpanels].withdrawn = False;
 
 	panelprint("CREATE", numpanels);
 
+	numactive++;
 	return numpanels++;
 }
 
 /*
  * remove a panel
  */
-int panelremove(Display *dsp, int pn, int destroycontent) {
-	int i, j;
+int panelremove(Display *dsp, int pn, int destroy) {
+	int i, j, n;
 	Window c;
 
 	panelprint("REMOVE", pn);
@@ -404,25 +407,41 @@ int panelremove(Display *dsp, int pn, int destroycontent) {
 	c = panel[pn].content;
 
 	j = 0;
-	for (i = 0; i < numpanels; i++) {
+	n = numpanels;
+	for (i = 0; i < n; i++) {
 		if (i == pn || panel[i].leader == c) {
-			panelprint("DESTROY", i);
-			if (! destroycontent)
-				XReparentWindow(dsp, panel[i].content,
-					withdrawn, 0, 0);
-			free(panel[i].name);
-			XDestroyWindow(dsp, panel[i].panel);
-			if (activepanel >= j && activepanel > 0)
-				activepanel--;
-			continue;
+			if (! panel[i].withdrawn)
+				numactive--;
+			if (destroy) {
+				panelprint("DESTROY", i);
+				free(panel[i].name);
+				XDestroyWindow(dsp, panel[i].panel);
+				numpanels--;
+			}
+			else if (! panel[i].withdrawn) {
+				panelprint("WITHDRAW", i);
+				XUnmapWindow(dsp, panel[i].panel);
+				panel[i].withdrawn = True;
+			}
+			if (activepanel == j && numactive > 0) {
+				do {
+					MODULEINCREASE(activepanel,
+						numpanels, -1);
+				}
+				while (panel[activepanel].withdrawn);
+			}
+			if (destroy) {
+				if (activepanel > j)
+					activepanel--;
+				continue;
+			}
 		}
 		if (j != i)
 			panel[j] = panel[i];
 		j++;
 	}
 
-	numpanels = j;
-	if (numpanels == 0)
+	if (numactive == 0)
 		activepanel = -1;
 
 	return 0;
@@ -491,6 +510,12 @@ void panelenter(Display *dsp) {
 		return;
 	}
 
+	if (panel[activepanel].withdrawn) {
+		panelprint("RESTORE", activepanel);
+		panel[activepanel].withdrawn = False;
+		numactive++;
+	}
+
 	XMapWindow(dsp, panel[activepanel].content);
 	XMapWindow(dsp, panel[activepanel].panel);
 	XRaiseWindow(dsp, panel[activepanel].panel);
@@ -511,7 +536,9 @@ int panelswitch(Display *dsp, int rel) {
 	if (activepanel == -1)
 		return -1;
 	panelleave(dsp);
-	MODULEINCREASE(activepanel, numpanels, rel);
+	do {
+		MODULEINCREASE(activepanel, numpanels, rel);
+	} while (panel[activepanel].withdrawn);
 	panelenter(dsp);
 	return 0;
 }
@@ -640,7 +667,7 @@ void drawlist(Display *dsp, ListWindow *lw,
  * draw the panel list window
  */
 void drawpanel(Display *dsp, ListWindow *lw, int activepanel) {
-	int i;
+	int i, j, a;
 	char **elements;
 	char *help[] = {"enter: ok",
 			"escape: ok",
@@ -648,15 +675,21 @@ void drawpanel(Display *dsp, ListWindow *lw, int activepanel) {
 			"e: move window at end",
 			NULL};
 
-	elements = malloc((numpanels + 1) * sizeof(char *));
+	elements = malloc((numactive + 1) * sizeof(char *));
+	j = 0;
 	for (i = 0; i < numpanels; i++) {
+		if (panel[i].withdrawn)
+			continue;
+		if (i == activepanel)
+			a = j;
 		panelname(dsp, i);
-		elements[i] = malloc(100);
-		snprintf(elements[i], 100, " %2d - %s ", i, panel[i].name);
+		elements[j] = malloc(100);
+		snprintf(elements[j], 100, " %2d - %s ", j, panel[i].name);
+		j++;
 	}
-	elements[numpanels] = NULL;
+	elements[numactive] = NULL;
 
-	drawlist(dsp, lw, "IRWM: panel list", elements, activepanel, help);
+	drawlist(dsp, lw, "IRWM: panel list", elements, a, help);
 
 	for (i = 0; i < numpanels; i++)
 		free(elements[i]);
@@ -896,7 +929,6 @@ int main(int argn, char *argv[]) {
 		free(irwa);
 	}
 	printf("geometry: %dx%d+%d+%d\n", rwa.width, rwa.height, rwa.x, rwa.y);
-	withdrawn = root;
 
 	XSelectInput(dsp, root,
 		SubstructureRedirectMask |
@@ -1148,9 +1180,9 @@ int main(int argn, char *argv[]) {
 
 			panelremove(dsp, pn, True);
 
-			if (numpanels > 0)
+			if (numactive > 0)
 				panelenter(dsp);
-			else if (quitonlastclose) {
+			else if (numpanels == 0 && quitonlastclose) {
 				run = False;
 				break;
 			}
@@ -1203,8 +1235,23 @@ int main(int argn, char *argv[]) {
 
 			win = panel[pn].leader;
 
-			if (evt.xunmap.send_event)
+			if (evt.xunmap.send_event) {
 				panelremove(dsp, pn, False);
+				if (numactive > 0)
+					panelenter(dsp);
+				else if (numpanels == 0 && quitonlastclose) {
+					run = False;
+					break;
+				}
+				else {
+					activepanel = -1;
+					XSetInputFocus(dsp, root,
+						RevertToParent, CurrentTime);
+					printf("to quit on last close, pass -q\n");
+				}
+
+				raiselists(dsp, &panelwindow, &progswindow);
+			}
 
 			if (win == None)
 				break;

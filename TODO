@@ -2,8 +2,6 @@
   down in the list; currently only ENDWINDOW(e) allows moving a window; also
   STARTWINDOW could be useful
 
-- skip windows that unmapped themselves
-
 - switch panel on MapNotify, not on MapRequest; this requires mapping the
   window on MapRequest, but then changing activepanel only when the content is
   actually mapped

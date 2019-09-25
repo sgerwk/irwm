@@ -676,6 +676,7 @@ void drawpanel(Display *dsp, ListWindow *lw, int activepanel) {
 			NULL};
 
 	elements = malloc((numactive + 1) * sizeof(char *));
+	a = 0;
 	j = 0;
 	for (i = 0; i < numpanels; i++) {
 		if (panel[i].withdrawn)

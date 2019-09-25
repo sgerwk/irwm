@@ -1430,7 +1430,8 @@ int main(int argn, char *argv[]) {
 			if (showpanel &&
 			    activepanel != -1 &&
 			    activepanel < numpanels - 1) {
-				panelswap(activepanel, numpanels - 1);
+				for (i = activepanel; i < numpanels - 1; i++)
+					panelswap(i, i + 1);
 				activepanel = numpanels - 1;
 				XClearArea(dsp, panelwindow.window,
 					0, 0, 0, 0, True);

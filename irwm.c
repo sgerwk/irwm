@@ -27,6 +27,7 @@
  *   NOCOMMAND		nop
  *   NEXTPANEL		switch to next panel
  *   PREVPANEL		switch to previous panel
+ *   RESTART		restart irwm
  *   QUIT		quit irwm
  *
  *   PANELWINDOW	show/hide the panel list window
@@ -104,7 +105,8 @@
 #define NOCOMMAND    0		/* no command */
 #define NEXTPANEL    1		/* switch to next panel */
 #define PREVPANEL    2		/* switch to previous panel */
-#define QUIT         3		/* quit irwm */
+#define RESTART      3		/* restart irwm */
+#define QUIT         4		/* quit irwm */
 
 #define PANELWINDOW 10		/* show the panel list window */
 #define PROGSWINDOW 11		/* show the programs window */
@@ -125,6 +127,7 @@ struct {
 	{NOCOMMAND,	"NOCOMMAND",	XK_VoidSymbol,	0},
 	{NEXTPANEL,	"NEXTPANEL",	XK_Right,	Mod1Mask},
 	{PREVPANEL,	"PREVPANEL",	XK_Left,	Mod1Mask},
+	{RESTART,	"RESTART", XK_Tab, ControlMask | ShiftMask | Mod1Mask},
 	{QUIT,		"QUIT",		XK_Tab,	ControlMask | ShiftMask},
 	{PANELWINDOW,	"PANELWINDOW",	XK_Tab,		Mod1Mask},
 	{PROGSWINDOW,	"PROGSWINDOW",	XK_Tab,		ControlMask},
@@ -767,6 +770,7 @@ void closewindow(Display *dsp, Window win) {
  * main
  */
 int main(int argn, char *argv[]) {
+	char **cargv;
 	char *logfile = "irwm.log";
 	int lf;
 
@@ -796,7 +800,7 @@ int main(int argn, char *argv[]) {
 	Bool tran;
 
 	Bool uselirc = False, quitonlastclose = False, singlekey = False;
-	Bool run;
+	Bool run, restart;
 	int command;
 	Bool showpanel = False, showprogs = False;
 	int progselected = 0;
@@ -813,6 +817,7 @@ int main(int argn, char *argv[]) {
 
 				/* parse options */
 
+	cargv = argv;
 	while (argn - 1 > 0 && argv[1][0] == '-') {
 		if (! strcmp(argv[1], "-l"))
 			uselirc = True;
@@ -1079,6 +1084,7 @@ int main(int argn, char *argv[]) {
 
 				/* main loop */
 
+	restart = False;
 	for (run = True; run; ) {
 
 				/* get X event */
@@ -1364,6 +1370,9 @@ int main(int argn, char *argv[]) {
 			panelswitch(dsp, command == PREVPANEL ? -1 : 1);
 			raiselists(dsp, &panelwindow, &progswindow);
 			break;
+		case RESTART:
+			restart = True;
+			/* fallthrough */
 		case QUIT:
 			run = False;
 			break;
@@ -1418,6 +1427,10 @@ int main(int argn, char *argv[]) {
 						forkprogram(p, NULL);
 					else if (! strcmp(t, "resize"))
 						panelresize(dsp, rwa);
+					else if (! strcmp(t, "restart")) {
+						run = False;
+						restart = True;
+					}
 					else if (! strcmp(t, "quit"))
 						run = False;
 				}
@@ -1455,6 +1468,11 @@ int main(int argn, char *argv[]) {
 	for (i = 0; i < numpanels; i++)
 		closewindow(dsp, panel[i].content);
 	XCloseDisplay(dsp);
+	if (restart) {
+		printf("irwm restart\n");
+		execvp(cargv[0], cargv);
+		perror(cargv[0]);
+	}
 	printf("irwm ended\n");
 
 	return EXIT_SUCCESS;

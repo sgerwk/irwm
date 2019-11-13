@@ -16,6 +16,7 @@ program fonts xfontsel
 program browser firefox
 program opera /opt/bin/opera
 program resize
+# program restart
 program quit
 
 # font to use in the window and programs lists

@@ -40,6 +40,8 @@
  *   KOWINDOW		only in the panel list window: close the current panel
  *   ENDWINDOW		only in the panel list window: move panel at end
  *
+ *   NUMWINDOW(n)	1<=n<=9, select entry n in the list
+ *
  * details on configuring and testing lirc are in file lircrd
  */
 
@@ -102,21 +104,23 @@
 /*
  * commands
  */
-#define NOCOMMAND    0		/* no command */
-#define NEXTPANEL    1		/* switch to next panel */
-#define PREVPANEL    2		/* switch to previous panel */
-#define RESTART      3		/* restart irwm */
-#define QUIT         4		/* quit irwm */
+#define NOCOMMAND     0		/* no command */
+#define NEXTPANEL     1		/* switch to next panel */
+#define PREVPANEL     2		/* switch to previous panel */
+#define RESTART       3		/* restart irwm */
+#define QUIT          4		/* quit irwm */
 
-#define PANELWINDOW 10		/* show the panel list window */
-#define PROGSWINDOW 11		/* show the programs window */
+#define PANELWINDOW  10		/* show the panel list window */
+#define PROGSWINDOW  11		/* show the programs window */
 
-#define UPWINDOW    20		/* up in the window */
-#define DOWNWINDOW  21		/* down in the window */
-#define HIDEWINDOW  22		/* hide both windows */
-#define OKWINDOW    23		/* select the current item in the window */
-#define KOWINDOW    24		/* close currently selected panel */
-#define ENDWINDOW   25		/* move currently active panel at the end */
+#define UPWINDOW     20		/* up in the window */
+#define DOWNWINDOW   21		/* down in the window */
+#define HIDEWINDOW   22		/* hide both windows */
+#define OKWINDOW     23		/* select the current item in the window */
+#define KOWINDOW     24		/* close currently selected panel */
+#define ENDWINDOW    25		/* move currently active panel at the end */
+
+#define NUMWINDOW(n) (30 + (n))	/* item in window, 1<=n<=9 */
 
 /*
  * commands, their names and keystrokes
@@ -138,6 +142,15 @@ struct {
 	{OKWINDOW,	"OKWINDOW",	XK_Return,	0},
 	{KOWINDOW,	"KOWINDOW",	XK_c,		0},
 	{ENDWINDOW,	"ENDWINDOW",	XK_e,		0},
+	{NUMWINDOW(1),	"NUMWINDOW(1)",	XK_1,		0},
+	{NUMWINDOW(2),	"NUMWINDOW(2)",	XK_2,		0},
+	{NUMWINDOW(3),	"NUMWINDOW(3)",	XK_3,		0},
+	{NUMWINDOW(4),	"NUMWINDOW(4)",	XK_4,		0},
+	{NUMWINDOW(5),	"NUMWINDOW(5)",	XK_5,		0},
+	{NUMWINDOW(6),	"NUMWINDOW(6)",	XK_6,		0},
+	{NUMWINDOW(7),	"NUMWINDOW(7)",	XK_7,		0},
+	{NUMWINDOW(8),	"NUMWINDOW(8)",	XK_8,		0},
+	{NUMWINDOW(9),	"NUMWINDOW(9)",	XK_9,		0},
 	{-1,		NULL,		XK_VoidSymbol,	0}
 };
 char *commandtostring(int command) {
@@ -629,6 +642,7 @@ void drawlist(Display *dsp, ListWindow *lw,
 	int x, y, z, w;
 	int start, i;
 	Bool stop;
+	char buf[100];
 
 	x = MARGIN;
 	y = MARGIN;
@@ -655,7 +669,8 @@ void drawlist(Display *dsp, ListWindow *lw,
 			XDrawRectangle(dsp, lw->window, lw->gc, x, y, z, w);
 		}
 
-		drawstring(dsp, lw, x + PADDING, &y, elements[i]);
+		snprintf(buf, 100, "%2d %s", i + 1, elements[i]);
+		drawstring(dsp, lw, x + PADDING, &y, buf);
 	}
 
 	drawarrow(dsp, lw, &y, ! stop && elements[i], False);
@@ -687,16 +702,12 @@ void drawpanel(Display *dsp, ListWindow *lw, int activepanel) {
 		if (i == activepanel)
 			a = j;
 		panelname(dsp, i);
-		elements[j] = malloc(100);
-		snprintf(elements[j], 100, " %2d - %s ", j, panel[i].name);
+		elements[j] = panel[i].name;
 		j++;
 	}
 	elements[numactive] = NULL;
 
 	drawlist(dsp, lw, "IRWM: panel list", elements, a, help);
-
-	for (i = 0; i < numpanels; i++)
-		free(elements[i]);
 	free(elements);
 }
 
@@ -796,7 +807,7 @@ int main(int argn, char *argv[]) {
 	Atom irwm;
 	int pn;
 	char *message;
-	int i;
+	int i, j;
 	Bool tran;
 
 	Bool uselirc = False, quitonlastclose = False, singlekey = False;
@@ -1254,7 +1265,8 @@ int main(int argn, char *argv[]) {
 					activepanel = -1;
 					XSetInputFocus(dsp, root,
 						RevertToParent, CurrentTime);
-					printf("to quit on last close, pass -q\n");
+					printf("to quit on last close, ");
+					printf("pass -q\n");
 				}
 
 				raiselists(dsp, &panelwindow, &progswindow);
@@ -1362,6 +1374,23 @@ int main(int argn, char *argv[]) {
 		if (command == PROGSWINDOW && showprogs)
 			command = HIDEWINDOW;
 
+		if (NUMWINDOW(1) <= command && command <= NUMWINDOW(9)) {
+			if (showpanel) {
+				if (activepanel == -1)
+					continue;
+				for (i = 0, j = 0; i < activepanel; i++)
+					if (! panel[activepanel].withdrawn)
+						j++;
+				panelswitch(dsp, command - NUMWINDOW(1) - j);
+				XClearArea(dsp, panelwindow.window,
+					0, 0, 0, 0, True);
+				XRaiseWindow(dsp, panelwindow.window);
+			}
+			if (showprogs)
+				progselected = command - NUMWINDOW(1);
+			command = OKWINDOW;
+		}
+
 		switch (command) {
 		case NOCOMMAND:
 			break;
@@ -1452,6 +1481,7 @@ int main(int argn, char *argv[]) {
 				XRaiseWindow(dsp, panelwindow.window);
 			}
 			break;
+
 		}
 
 		fflush(NULL);

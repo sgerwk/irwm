@@ -142,6 +142,11 @@ in the list of windows, close the currently active window
 ENDWINDOW
 (e)
 in the list of windows, move the currently active window at the end
+.TP
+.I
+NUMWINDOW(n)
+(1-9)
+select item 1-9 in the list of windows or programs
 
 .P
 In single key mode (option -s), PANELWINDOW rotates among the window list,
@@ -302,7 +307,9 @@ numbers are:
 #define HIDEWINDOW  22		/* hide both lists */
 #define OKWINDOW    23		/* select the current item in the list */
 #define KOWINDOW    24		/* close the current window */
-#define ENDWINDOW   25		/* move currently active panel at the end */
+#define ENDWINDOW   25		/* move currently active panel at end */
+
+#define NUMWINDOW(n) (30 + (n))	/* item in window, 1<=n<=9 */
 .fi
 
 When switching to a new panel, irwm either unmaps the previous or just covers

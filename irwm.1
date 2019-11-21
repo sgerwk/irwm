@@ -146,7 +146,7 @@ in the list of windows, move the currently active window at the end
 .I
 NUMWINDOW(n)
 (1-9)
-select item 1-9 in the list of windows or programs
+select item number \fIn\fP in the list of prorgams or windows
 
 .P
 In single key mode (option -s), PANELWINDOW rotates among the window list,
@@ -186,8 +186,9 @@ the list of programs that is shown on PROGSWINDOW (e.g. Control-Tab)
 so the user can execute xcalc.
 If the keyword "\fIprogram\fP" is followed by one word instead of two, it is
 a command to irwm itself, either \fIresize\fP (which makes the current
-window as large as the screen, in case it dared making itself smaller) and
+window as large as the screen, in case it dared making itself smaller) or
 \fIquit\fP (to terminate irwm).
+Either way, the first letter of the program is a shortcut for it.
 
 No program argument can be given in a \fIstartup\fP or \fIprogram\fP line.
 
@@ -309,7 +310,7 @@ numbers are:
 #define KOWINDOW    24		/* close the current window */
 #define ENDWINDOW   25		/* move currently active panel at end */
 
-#define NUMWINDOW(n) (30 + (n))	/* item in window, 1<=n<=9 */
+#define NUMWINDOW(n) (100 + (n))	/* select entry n in the list */
 .fi
 
 When switching to a new panel, irwm either unmaps the previous or just covers

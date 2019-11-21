@@ -40,7 +40,7 @@
  *   KOWINDOW		only in the panel list window: close the current panel
  *   ENDWINDOW		only in the panel list window: move panel at end
  *
- *   NUMWINDOW(n)	1<=n<=9, select entry n in the list
+ *   NUMWINDOW(n)	select entry n in the list
  *
  * details on configuring and testing lirc are in file lircrd
  */
@@ -120,7 +120,7 @@
 #define KOWINDOW     24		/* close currently selected panel */
 #define ENDWINDOW    25		/* move currently active panel at the end */
 
-#define NUMWINDOW(n) (30 + (n))	/* item in window, 1<=n<=9 */
+#define NUMWINDOW(n) (100 + (n))	/* select entry n in the window */
 
 /*
  * commands, their names and keystrokes
@@ -151,28 +151,42 @@ struct {
 	{NUMWINDOW(7),	"NUMWINDOW(7)",	XK_7,		0},
 	{NUMWINDOW(8),	"NUMWINDOW(8)",	XK_8,		0},
 	{NUMWINDOW(9),	"NUMWINDOW(9)",	XK_9,		0},
-	{-1,		NULL,		XK_VoidSymbol,	0}
+	{-1,		NULL,		XK_VoidSymbol,	0},
+	{-1,		"NUMWINDOW(XXXX)", XK_VoidSymbol,0}
 };
 char *commandtostring(int command) {
 	int i;
 	for(i = 0; commandstring[i].string; i++)
 		if (commandstring[i].command == command)
 			return commandstring[i].string;
+	if (command >= NUMWINDOW(0)) {
+		sprintf(commandstring[i + 1].string, "NUMWINDOW(%d)", command);
+		return commandstring[i + 1].string;
+	}
 	return "ERROR: no such command";
 }
 int stringtocommand(char *string) {
 	int i;
+	char par;
 	for(i = 0; commandstring[i].string; i++)
 		if (! strcmp(commandstring[i].string, string))
 			return commandstring[i].command;
+	if (sscanf(string, "NUMWINDOW(%d%c", &i, &par) == 2 &&
+	    i >=0 && par == ')')
+		return NUMWINDOW(i);
 	return -1;
 }
-int eventtocommand(Display *dsp, XKeyEvent e) {
+int eventtocommand(Display *dsp, XKeyEvent e, KeySym *list) {
 	int i;
 	for(i = 0; commandstring[i].string; i++)
 		if (e.keycode == XKeysymToKeycode(dsp, commandstring[i].keysym)
 		    && e.state == commandstring[i].modifier)
 			return commandstring[i].command;
+	if (list == NULL)
+		return -1;
+	for (list = list, i = 0; *list != XK_VoidSymbol; list++, i++)
+		if (e.keycode == XKeysymToKeycode(dsp, *list))
+			return NUMWINDOW(i + 1);
 	return -1;
 }
 
@@ -809,6 +823,7 @@ int main(int argn, char *argv[]) {
 	char *message;
 	int i, j;
 	Bool tran;
+	KeySym shortcuts[100];
 
 	Bool uselirc = False, quitonlastclose = False, singlekey = False;
 	Bool run, restart;
@@ -965,12 +980,15 @@ int main(int argn, char *argv[]) {
 	if (irwmrc == NULL) {
 		printf("WARNING: cannot read /etc/irwmrc or .irwmrc\n");
 
-		programs[0].title = "xterm";
-		programs[0].program = "/usr/bin/xterm";
-		programs[1].title = "quit";
-		programs[1].program = NULL;
-		programs[2].title = NULL;
-		numprograms = 2;
+		numprograms = 0;
+		programs[numprograms].title = "xterm";
+		programs[numprograms].program = "/usr/bin/xterm";
+		shortcuts[numprograms] = XK_x;
+		numprograms++;
+		programs[numprograms].title = "quit";
+		programs[numprograms].program = NULL;
+		shortcuts[numprograms] = XK_q;
+		numprograms++;
 
 		forkprogram(programs[0].program, NULL);
 	}
@@ -988,11 +1006,13 @@ int main(int argn, char *argv[]) {
 			else if (2 == sscanf(line, "program %s %s", s1, s2)) {
 				programs[numprograms].title = strdup(s1);
 				programs[numprograms].program = strdup(s2);
+				shortcuts[numprograms] = s1[0] - 'a' + XK_a;
 				numprograms++;
 			}
 			else if (1 == sscanf(line, "program %s", s1)) {
 				programs[numprograms].title = strdup(s1);
 				programs[numprograms].program = NULL;
+				shortcuts[numprograms] = s1[0] - 'a' + XK_a;
 				numprograms++;
 			}
 			else if (line[0] != '\n' && line[0] != '#')
@@ -1004,6 +1024,8 @@ int main(int argn, char *argv[]) {
 		}
 		fclose(irwmrc);
 	}
+	programs[numprograms].title = NULL;
+	shortcuts[numprograms] = XK_VoidSymbol;
 
 				/* graphic context, font and list size */
 
@@ -1329,7 +1351,8 @@ int main(int argn, char *argv[]) {
 			printf("key=%d state=%d", ekey.keycode, ekey.state);
 			printf("\n");
 
-			command = eventtocommand(dsp, ekey);
+			command = eventtocommand(dsp, ekey,
+					showprogs ? shortcuts : NULL);
 			if (command == -1)
 				command = NOCOMMAND;
 			break;
@@ -1374,7 +1397,7 @@ int main(int argn, char *argv[]) {
 		if (command == PROGSWINDOW && showprogs)
 			command = HIDEWINDOW;
 
-		if (NUMWINDOW(1) <= command && command <= NUMWINDOW(9)) {
+		if (NUMWINDOW(1) <= command) {
 			if (showpanel) {
 				if (activepanel == -1)
 					continue;

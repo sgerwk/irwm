@@ -24,5 +24,10 @@ program quit
 # font -*-*-*-*-*-*-24-*-*-*-*-*-*-1
 # font Arial-15:bold
 
+# boolean options
+
+confirmquit
+# quitonlastclose
+
 echo end of configuration file
 

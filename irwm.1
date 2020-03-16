@@ -36,6 +36,10 @@ receive commands via \fBlirc(4)\fP
 quit when the last window is closed
 .TP
 .B
+-c
+ask for confirmation on quit unless all windows are already closed
+.TP
+.B
 -s
 single key mode (see below)
 .TP
@@ -176,6 +180,9 @@ On startup, irwm reads \fI$HOME/.irwmrc\fP and, if this file does not exists,
 
     font Arial-15:bold
 
+    quitonlastclose
+    confirmquit
+
     echo end of configuration file
 .fi
 
@@ -194,6 +201,11 @@ No program argument can be given in a \fIstartup\fP or \fIprogram\fP line.
 
 The line "\fIfont Arial-15:bold\fP" tells the font to use in the window and
 program lists.
+
+The lines "\fIquitonlastclose\fP" and "\fIconfirmquit\fP" are respectively
+equivalent to the commandline options \fI-q\fP and \fI-c\fP: close the window
+manager when the last window is closed and ask for confirmation when quitting
+unless all windows are already closed.
 
 The "\fIecho ...\fP" line has the usual meaning.
 

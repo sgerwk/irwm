@@ -763,11 +763,22 @@ void drawprogs(Display *dsp, ListWindow *lw, int selected) {
 }
 
 /*
+ * draw the confirmation window
+ */
+void drawconfirm(Display *dsp, ListWindow *cw, int selected) {
+	char *elements[] = {"yes", "no", NULL};
+	char *help[] = {NULL};
+	drawlist(dsp, cw, "IRWM: confirm quit", elements, selected, help);
+}
+
+/*
  * clear the panel list window and raise the list windows, if any is mapped
  */
-void raiselists(Display *dsp, ListWindow *panels, ListWindow *progs) {
+void raiselists(Display *dsp,
+		ListWindow *panels, ListWindow *confirm, ListWindow *progs) {
 	XClearArea(dsp, panels->window, 0, 0, 0, 0, True);
 	XRaiseWindow(dsp, panels->window);
+	XRaiseWindow(dsp, confirm->window);
 	XRaiseWindow(dsp, progs->window);
 }
 
@@ -830,7 +841,7 @@ int main(int argn, char *argv[]) {
 #else
 	XftFont *font;
 #endif
-	ListWindow panelwindow, progswindow;
+	ListWindow panelwindow, progswindow, confirmwindow;
 	XWindowChanges wc;
 	int listwidth, listheight;
 	Atom irwm;
@@ -840,11 +851,12 @@ int main(int argn, char *argv[]) {
 	Bool tran;
 	KeySym shortcuts[100];
 
-	Bool uselirc = False, quitonlastclose = False, singlekey = False;
+	Bool uselirc = False, singlekey = False;
+	Bool quitonlastclose = False, confirmquit = False;
 	Bool run, restart;
 	int command;
-	Bool showpanel = False, showprogs = False;
-	int progselected = 0;
+	Bool showpanel = False, showprogs = False, showconfirm = False;
+	int progselected = 0, confirmselected = 0;
 	char *p, *t;
 
 	XEvent evt;
@@ -864,6 +876,8 @@ int main(int argn, char *argv[]) {
 			uselirc = True;
 		else if (! strcmp(argv[1], "-q"))
 			quitonlastclose = True;
+		else if (! strcmp(argv[1], "-c"))
+			confirmquit = True;
 		else if (! strcmp(argv[1], "-s"))
 			singlekey = True;
 		else if (! strcmp(argv[1], "-u"))
@@ -927,6 +941,7 @@ int main(int argn, char *argv[]) {
 			printf("options:\n");
 			printf("\t-l\t\t\tuse lirc for input\n");
 			printf("\t-q\t\t\tquit when all windows are closed\n");
+			printf("\t-c\t\t\tconfirm quit if a window is open\n");
 			printf("\t-r\t\t\tswitch to window by raising it\n");
 			printf("\t-u\t\t\tswitch by unmapping previous\n");
 			printf("\t-display display\tconnect to server\n");
@@ -1010,7 +1025,13 @@ int main(int argn, char *argv[]) {
 	else {
 		numprograms = 0;
 		while (fgets(line, 100, irwmrc)) {
-			if (1 == sscanf(line, "echo %[^\n]", s1))
+			if (1 == sscanf(line, "%s", s1) &&
+			    ! strcmp(s1, "quitonlastclose"))
+				quitonlastclose = True;
+			else if (1 == sscanf(line, "%s", s1) &&
+			    ! strcmp(s1, "confirmquit"))
+				confirmquit = True;
+			else if (1 == sscanf(line, "echo %[^\n]", s1))
 				printf("%s\n", s1);
 			else if (1 == sscanf(line, "font %s", s1)) {
 				if (fontname == NULL)
@@ -1076,6 +1097,25 @@ int main(int argn, char *argv[]) {
 		rwa.visual, rwa.colormap);
 	XftColorAllocName(dsp, rwa.visual, rwa.colormap,
 		"black", &panelwindow.color);
+#endif
+
+				/* confirm window */
+
+	confirmwindow.window = XCreateSimpleWindow(dsp, root,
+		rwa.width / 3, rwa.height / 2 - listheight / 2,
+		listwidth, listheight,
+		2, BlackPixel(dsp, 0), WhitePixel(dsp, 0));
+	printf("confirm window: 0x%lx\n", confirmwindow.window);
+	XStoreName(dsp, confirmwindow.window, "irwm confirm window");
+	XSelectInput(dsp, confirmwindow.window, ExposureMask);
+
+	confirmwindow.gc = gc;
+	confirmwindow.font = font;
+	confirmwindow.width = listwidth;
+#ifdef XFT
+	confirmwindow.draw = XftDrawCreate(dsp, confirmwindow.window,
+		rwa.visual, rwa.colormap);
+	confirmwindow.color = panelwindow.color;
 #endif
 
 				/* program list window */
@@ -1165,7 +1205,8 @@ int main(int argn, char *argv[]) {
 			activepanel = pn;
 			panelresize(dsp, rwa);
 			panelenter(dsp);
-			raiselists(dsp, &panelwindow, &progswindow);
+			raiselists(dsp,
+				&panelwindow, &confirmwindow, &progswindow);
 			break;
 		case ConfigureRequest:
 			printf("ConfigureRequest\n");
@@ -1248,7 +1289,8 @@ int main(int argn, char *argv[]) {
 				printf("to quit on last close, pass -q\n");
 			}
 
-			raiselists(dsp, &panelwindow, &progswindow);
+			raiselists(dsp,
+				&panelwindow, &confirmwindow, &progswindow);
 			break;
 		case GravityNotify:
 			printf("GravityNotify\n");
@@ -1273,7 +1315,8 @@ int main(int argn, char *argv[]) {
 			panelleave(dsp);
 			activepanel = pn;
 			panelenter(dsp);
-			raiselists(dsp, &panelwindow, &progswindow);
+			raiselists(dsp,
+				&panelwindow, &confirmwindow, &progswindow);
 
 			break;
 		case UnmapNotify:
@@ -1306,7 +1349,8 @@ int main(int argn, char *argv[]) {
 					printf("pass -q\n");
 				}
 
-				raiselists(dsp, &panelwindow, &progswindow);
+				raiselists(dsp, &panelwindow,
+					&confirmwindow, &progswindow);
 			}
 
 			if (win == None)
@@ -1321,7 +1365,8 @@ int main(int argn, char *argv[]) {
 			panelleave(dsp);
 			activepanel = pn;
 			panelenter(dsp);
-			raiselists(dsp, &panelwindow, &progswindow);
+			raiselists(dsp,
+				&panelwindow, &confirmwindow, &progswindow);
 
 			break;
 		case ClientMessage:
@@ -1386,6 +1431,9 @@ int main(int argn, char *argv[]) {
 				drawpanel(dsp, &panelwindow, activepanel);
 			if (evt.xexpose.window == progswindow.window)
 				drawprogs(dsp, &progswindow, progselected);
+			if (evt.xexpose.window == confirmwindow.window)
+				drawconfirm(dsp, &confirmwindow,
+					confirmselected);
 			break;
 
 		case MappingNotify:
@@ -1435,13 +1483,19 @@ int main(int argn, char *argv[]) {
 		case NEXTPANEL:
 		case PREVPANEL:
 			panelswitch(dsp, command == PREVPANEL ? -1 : 1);
-			raiselists(dsp, &panelwindow, &progswindow);
+			raiselists(dsp,
+				&panelwindow, &confirmwindow, &progswindow);
 			break;
 		case RESTART:
 			restart = True;
 			/* fallthrough */
 		case QUIT:
-			run = False;
+			if (! confirmquit && numpanels == 0)
+				run = False;
+			else {
+				showconfirm = True;
+				XMapWindow(dsp, confirmwindow.window);
+			}
 			break;
 
 		case PANELWINDOW:
@@ -1475,6 +1529,12 @@ int main(int argn, char *argv[]) {
 				XClearArea(dsp, progswindow.window,
 					0, 0, 0, 0, True);
 			}
+			if (showconfirm) {
+				MODULEINCREASE(confirmselected, 2,
+					(command == UPWINDOW ? -1 : 1));
+				XClearArea(dsp, confirmwindow.window,
+					0, 0, 0, 0, True);
+			}
 			break;
 		case HIDEWINDOW:
 		case OKWINDOW:
@@ -1483,24 +1543,48 @@ int main(int argn, char *argv[]) {
 				XUnmapWindow(dsp, panelwindow.window);
 				XUngrabKeyboard(dsp, CurrentTime);
 			}
-			if (showprogs) {
+			else if (showprogs) {
 				showprogs = False;
 				XUnmapWindow(dsp, progswindow.window);
 				XUngrabKeyboard(dsp, CurrentTime);
-				if (command == OKWINDOW) {
-					p = programs[progselected].program;
-					t = programs[progselected].title;
-					if (p)
-						forkprogram(p, NULL);
-					else if (! strcmp(t, "resize"))
-						panelresize(dsp, rwa);
-					else if (! strcmp(t, "restart")) {
-						run = False;
-						restart = True;
-					}
-					else if (! strcmp(t, "quit"))
-						run = False;
+				if (command == HIDEWINDOW)
+					break;
+				p = programs[progselected].program;
+				t = programs[progselected].title;
+				if (p)
+					forkprogram(p, NULL);
+				else if (! strcmp(t, "resize"))
+					panelresize(dsp, rwa);
+				else if (! strcmp(t, "restart")) {
+					run = False;
+					restart = True;
 				}
+				else if (! strcmp(t, "quit")) {
+					if (! confirmquit || numpanels == 0) {
+						run = False;
+						break;
+					}
+					showconfirm = True;
+					confirmselected = 0;
+					XMapWindow(dsp, confirmwindow.window);
+					XGrabKeyboard(dsp, root, False,
+						GrabModeAsync, GrabModeAsync,
+						CurrentTime);
+					XUnmapWindow(dsp, panelwindow.window);
+					XUnmapWindow(dsp, progswindow.window);
+				}
+			}
+			else if (showconfirm) {
+				showconfirm = False;
+				XUngrabKeyboard(dsp, CurrentTime);
+				if (command == HIDEWINDOW)
+					break;
+				if (confirmselected == 0) {
+					run = False;
+					break;
+				}
+				showconfirm = False;
+				XUnmapWindow(dsp, confirmwindow.window);
 			}
 			break;
 		case KOWINDOW:

@@ -1577,6 +1577,7 @@ int main(int argn, char *argv[]) {
 			else if (showconfirm) {
 				showconfirm = False;
 				XUngrabKeyboard(dsp, CurrentTime);
+				XUnmapWindow(dsp, confirmwindow.window);
 				if (command == HIDEWINDOW)
 					break;
 				if (confirmselected == 0) {
@@ -1584,7 +1585,6 @@ int main(int argn, char *argv[]) {
 					break;
 				}
 				showconfirm = False;
-				XUnmapWindow(dsp, confirmwindow.window);
 			}
 			break;
 		case KOWINDOW:

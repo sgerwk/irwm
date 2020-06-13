@@ -24,6 +24,10 @@ program quit
 # font -*-*-*-*-*-*-24-*-*-*-*-*-*-1
 # font Arial-15:bold
 
+# the log file
+
+logfile /run/user/1000/irwm.log
+
 # boolean options
 
 confirmquit

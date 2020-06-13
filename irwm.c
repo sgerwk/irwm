@@ -16,7 +16,7 @@
  *
  *   alt-right		next panel
  *   alt-left		previous panel
- *   alt-tab		panel list	
+ *   alt-tab		panel list
  *   ctrl-tab		program list
  * 			in lists: up/down/return/escape
  *			only in panel list: c = close panel
@@ -385,7 +385,7 @@ int panelfind(Window p, int panelorcontent) {
  */
 void panelname(Display *dsp, int pn) {
 	XTextProperty t;
-	
+
 	if (! XGetWMName(dsp, panel[pn].content, &t)) {
 		printf("no name for window 0x%lx\n", panel[pn].content);
 		panel[pn].name = strdup("NoName");
@@ -947,55 +947,13 @@ int main(int argn, char *argv[]) {
 			printf("\t-display display\tconnect to server\n");
 			printf("\t-geometry WxH+X+Y\tgeometry of windows\n");
 			printf("\t-fn font\t\tfont used in lists\n");
-			printf("\t-logfile file\t\tlog to file\n");
+			printf("\t-log file\t\tlog to file\n");
 			exit(! strcmp(argv[1], "-h") ?
 				EXIT_SUCCESS : EXIT_FAILURE);
 		}
 		argn--;
 		argv++;
 	}
-
-				/* log file */
-	
-	if (! ! strcmp(logfile, "-")) {
-		lf = creat(logfile, S_IRUSR | S_IWUSR);
-		if (lf == -1)
-			perror(logfile);
-		else {
-			fprintf(stderr, "logging to %s\n", logfile);
-			dup2(lf, STDOUT_FILENO);
-			dup2(lf, STDERR_FILENO);
-		}
-	}
-
-				/* open display */
-
-	if (displayname == NULL)
-		displayname = getenv("DISPLAY");
-	dsp = XOpenDisplay(displayname);
-	if (dsp == NULL) {
-		printf("cannot open display: %s\n", displayname);
-		exit(EXIT_FAILURE);
-	}
-
-				/* root window */
-
-	root = DefaultRootWindow(dsp);
-	XGetWindowAttributes(dsp, root, &rwa);
-	printf("root: 0x%lx (%dx%d)\n", root, rwa.width, rwa.height);
-	if (irwa) {
-		rwa.width = irwa->width;
-		rwa.height = irwa->height;
-		rwa.x = irwa->x;
-		rwa.y = irwa->y;
-		free(irwa);
-	}
-	printf("geometry: %dx%d+%d+%d\n", rwa.width, rwa.height, rwa.x, rwa.y);
-
-	XSelectInput(dsp, root,
-		SubstructureRedirectMask |
-		SubstructureNotifyMask |
-		KeyPressMask);
 
 				/* configuration file */
 
@@ -1037,6 +995,8 @@ int main(int argn, char *argv[]) {
 				if (fontname == NULL)
 					fontname = strdup(s1);
 			}
+			else if (1 == sscanf(line, "logfile %s", s1))
+				logfile = strdup(s1);
 			else if (1 == sscanf(line, "startup %s", s1))
 				forkprogram(s1, NULL);
 			else if (2 == sscanf(line, "program %s %s", s1, s2)) {
@@ -1063,6 +1023,48 @@ int main(int argn, char *argv[]) {
 	programs[numprograms].title = NULL;
 	shortcuts[numprograms] = XK_VoidSymbol;
 
+				/* log file */
+
+	if (! ! strcmp(logfile, "-")) {
+		lf = creat(logfile, S_IRUSR | S_IWUSR);
+		if (lf == -1)
+			perror(logfile);
+		else {
+			fprintf(stderr, "logging to %s\n", logfile);
+			dup2(lf, STDOUT_FILENO);
+			dup2(lf, STDERR_FILENO);
+		}
+	}
+
+				/* open display */
+
+	if (displayname == NULL)
+		displayname = getenv("DISPLAY");
+	dsp = XOpenDisplay(displayname);
+	if (dsp == NULL) {
+		printf("cannot open display: %s\n", displayname);
+		exit(EXIT_FAILURE);
+	}
+
+				/* root window */
+
+	root = DefaultRootWindow(dsp);
+	XGetWindowAttributes(dsp, root, &rwa);
+	printf("root: 0x%lx (%dx%d)\n", root, rwa.width, rwa.height);
+	if (irwa) {
+		rwa.width = irwa->width;
+		rwa.height = irwa->height;
+		rwa.x = irwa->x;
+		rwa.y = irwa->y;
+		free(irwa);
+	}
+	printf("geometry: %dx%d+%d+%d\n", rwa.width, rwa.height, rwa.x, rwa.y);
+
+	XSelectInput(dsp, root,
+		SubstructureRedirectMask |
+		SubstructureNotifyMask |
+		KeyPressMask);
+
 				/* graphic context, font and list size */
 
 	gcv.line_width = 2;
@@ -1080,7 +1082,7 @@ int main(int argn, char *argv[]) {
 		PADDING * 2 * 2 + MARGIN * 2;
 
 				/* panel list window */
-	
+
 	panelwindow.window = XCreateSimpleWindow(dsp, root,
 		rwa.width / 2, rwa.height / 2 - listheight / 2,
 		listwidth, listheight,

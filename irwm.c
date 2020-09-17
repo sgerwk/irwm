@@ -348,6 +348,7 @@ struct panel {
 int numpanels = 0;
 int numactive = 0;
 int activepanel = -1;
+Window activecontent = -1;
 Bool unmaponleave = False;	/* unmap window when switching to another */
 
 /*
@@ -356,6 +357,7 @@ Bool unmaponleave = False;	/* unmap window when switching to another */
 void panelprint(char *type, int pn) {
 	printf("PANEL %d %-10.10s ", pn, type);
 	printf("%s ", pn == activepanel ? "*" : " ");
+	printf("%s ", activecontent == panel[activepanel].content ? "=" : " ");
 	printf("panel=0x%lx ", panel[pn].panel);
 	printf("content=0x%lx ", panel[pn].content);
 	printf("title=%s", panel[pn].name);
@@ -560,6 +562,10 @@ void panelenter(Display *dsp) {
 		panel[activepanel].withdrawn = False;
 		numactive++;
 	}
+
+	if (activecontent == panel[activepanel].content)
+		return;
+	activecontent = panel[activepanel].content;
 
 	XMapWindow(dsp, panel[activepanel].content);
 	XMapWindow(dsp, panel[activepanel].panel);

@@ -456,6 +456,8 @@ int panelremove(Display *dsp, int pn, int destroy) {
 	if (pn < 0 || pn >= numpanels)
 		return -1;
 	c = panel[pn].content;
+	if (c == activecontent)
+		activecontent = -1;
 
 	j = 0;
 	n = numpanels;
@@ -569,8 +571,10 @@ void panelenter(Display *dsp) {
 		numactive++;
 	}
 
-	if (activecontent == panel[activepanel].content)
+	if (activecontent == panel[activepanel].content) {
+		printf("NOTE: active content already active\n");
 		return;
+	}
 	activecontent = panel[activepanel].content;
 
 	XMapWindow(dsp, panel[activepanel].content);

@@ -20,6 +20,7 @@
  *   ctrl-tab		program list
  * 			in lists: up/down/return/escape
  *			only in panel list: c = close panel
+ *   ctrl-shift-l	print panels in the log file
  *   ctrl-shift-tab	quit
  *
  * lirc, or ClientMessage of message_type "IRWM" to the root window:
@@ -29,6 +30,7 @@
  *   PREVPANEL		switch to previous panel
  *   RESTART		restart irwm
  *   QUIT		quit irwm
+ *   LOGLIST		print the list of panels in the log file
  *
  *   PANELWINDOW	show/hide the panel list window
  *   PROGSWINDOW	show/hide the program list window
@@ -124,6 +126,7 @@
 #define PREVPANEL     2		/* switch to previous panel */
 #define RESTART       3		/* restart irwm */
 #define QUIT          4		/* quit irwm */
+#define LOGLIST       5		/* print panels in the log file */
 
 #define PANELWINDOW  10		/* show the panel list window */
 #define PROGSWINDOW  11		/* show the programs window */
@@ -148,6 +151,7 @@ struct {
 	{PREVPANEL,	"PREVPANEL",	XK_Left,	Mod1Mask},
 	{RESTART,	"RESTART", XK_Tab, ControlMask | ShiftMask | Mod1Mask},
 	{QUIT,		"QUIT",		XK_Tab,	ControlMask | ShiftMask},
+	{LOGLIST,	"LOGLIST",	XK_l,	ControlMask | ShiftMask},
 	{PANELWINDOW,	"PANELWINDOW",	XK_Tab,		Mod1Mask},
 	{PROGSWINDOW,	"PROGSWINDOW",	XK_Tab,		ControlMask},
 	{-1,		"ENDGRAB",	XK_VoidSymbol,	0},
@@ -1615,6 +1619,10 @@ int main(int argn, char *argv[]) {
 			}
 			break;
 
+		case LOGLIST:
+			for (pn = 0; pn < numpanels; pn++)
+				panelprint("LOG", pn);
+			break;
 		}
 
 		fflush(NULL);

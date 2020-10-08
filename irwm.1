@@ -93,6 +93,11 @@ PREVPANEL
 switch to the previos window
 .TP
 .I
+LOGLIST
+(Control-Shift-l)
+print list of windows in the log file
+.TP
+.I
 RESTART
 (Control-Shift-Alt-Tab)
 close all windows and restart irwm
@@ -312,7 +317,9 @@ numbers are:
 #define NOCOMMAND    0		/* no command */
 #define NEXTPANEL    1		/* switch to next window */
 #define PREVPANEL    2		/* switch to previous window */
-#define QUIT         3		/* quit irwm */
+#define RESTART      3		/* restart irwm */
+#define QUIT         4		/* quit irwm */
+#define LOGLIST      5		/* print panels in the log file */
 
 #define PANELWINDOW 10		/* show the window list */
 #define PROGSWINDOW 11		/* show the program list */

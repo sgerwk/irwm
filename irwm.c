@@ -339,6 +339,47 @@ int forkprogram(char *path, char *arg) {
 }
 
 /*
+ * the override_redirect windows
+ */
+#define MAXOVERRIDE 1000
+Window override[MAXOVERRIDE];
+int numoverride = 0;
+
+/*
+ * add an override window
+ */
+void overrideadd(Window win) {
+	if (numoverride >= MAXOVERRIDE) {
+		printf("WARNING: too many override_redirect windows\n");
+		return;
+	}
+	override[numoverride] = win;
+	numoverride++;
+}
+
+/*
+ * remove an override window
+ */
+void overrideremove(Window win) {
+	int i;
+	for (i = 0; i < numoverride; i++)
+		if (override[i] == win) {
+			numoverride--;
+			override[i] = override[numoverride];
+			return;
+		}
+}
+
+/*
+ * raise all override windows
+ */
+void overrideraise(Display *dsp) {
+	int i;
+	for (i = 0; i < numoverride; i++)
+		XRaiseWindow(dsp, override[i]);
+}
+
+/*
  * the panels and their contents
  */
 #define MAXPANELS 1000
@@ -580,6 +621,7 @@ void panelenter(Display *dsp) {
 	XMapWindow(dsp, panel[activepanel].content);
 	XMapWindow(dsp, panel[activepanel].panel);
 	XRaiseWindow(dsp, panel[activepanel].panel);
+	overrideraise(dsp);
 
 	data[0] = NormalState;
 	data[1] = None;
@@ -1278,8 +1320,10 @@ int main(int argn, char *argv[]) {
 			printf("CreateNotify\n");
 			printf("\t0x%lx ", evt.xcreatewindow.window);
 			printf("parent=0x%lx", evt.xcreatewindow.parent);
-			if (evt.xcreatewindow.override_redirect)
+			if (evt.xcreatewindow.override_redirect) {
 				printf(" override_redirect");
+				overrideadd(evt.xcreatewindow.window);
+			}
 			printf("\n");
 			break;
 		case DestroyNotify:
@@ -1288,6 +1332,8 @@ int main(int argn, char *argv[]) {
 			printf("\t0x%lx ", edestroy.window);
 			printf("parent=0x%lx", edestroy.event);
 			printf("\n");
+
+			overrideremove(edestroy.window);
 
 			pn = panelfind(edestroy.event, PANEL);
 			if (pn == -1)
@@ -1411,14 +1457,12 @@ int main(int argn, char *argv[]) {
 					printf(" %ld", emessage.data.l[i]);
 				break;
 			}
-			printf("\n");
 
 			if (emessage.message_type == irwm &&
-			    emessage.format == 32) {
+			    emessage.format == 32)
 				command = emessage.data.l[0];
-				break;
-			}
 
+			printf("\n");
 			break;
 
 					/* keypress events */
@@ -1626,6 +1670,8 @@ int main(int argn, char *argv[]) {
 		case LOGLIST:
 			for (pn = 0; pn < numpanels; pn++)
 				panelprint("LOG", pn);
+			for (i = 0; i < numoverride; i++)
+				printf("OVERRIDE 0x%lx\n", override[i]);
 			break;
 		}
 

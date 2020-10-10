@@ -218,6 +218,7 @@ int eventtocommand(Display *dsp, XKeyEvent e, KeySym *list) {
  * ICCCM atoms
  */
 Atom wm_state, wm_protocols, wm_delete_window;
+Atom net_client_list, net_client_list_stacking;
 
 /*
  * the lirc client
@@ -644,6 +645,25 @@ int panelswitch(Display *dsp, int rel) {
 	} while (panel[activepanel].withdrawn);
 	panelenter(dsp);
 	return 0;
+}
+
+/*
+ * update the list of managed windows
+ */
+void clientlistupdate(Display *dsp, Window root) {
+	Window *list;
+	int i;
+
+	list = malloc(numpanels * sizeof(Window));
+	for (i = 0; i < numpanels; i++)
+		list[i] = panel[i].content;
+	XChangeProperty(dsp, root, net_client_list,
+		XA_WINDOW, 32, PropModeReplace,
+		(unsigned char *) list, numpanels);
+	XChangeProperty(dsp, root, net_client_list_stacking,
+		XA_WINDOW, 32, PropModeReplace,
+		(unsigned char *) list, numpanels);
+	free(list);
 }
 
 /*
@@ -1203,6 +1223,9 @@ int main(int argn, char *argv[]) {
 	wm_state = XInternAtom(dsp, "WM_STATE", False);
 	wm_protocols = XInternAtom(dsp, "WM_PROTOCOLS", False);
 	wm_delete_window = XInternAtom(dsp, "WM_DELETE_WINDOW", False);
+	net_client_list = XInternAtom(dsp, "_NET_CLIENT_LIST", False);
+	net_client_list_stacking =
+		XInternAtom(dsp, "_NET_CLIENT_LIST_STACKING", False);
 
 				/* lirc client */
 
@@ -1260,6 +1283,7 @@ int main(int argn, char *argv[]) {
 				tran ? win : None);
 			if (pn == -1)
 				break;
+			clientlistupdate(dsp, root);
 
 			if (activepanel != -1)
 				panelleave(dsp);
@@ -1340,6 +1364,7 @@ int main(int argn, char *argv[]) {
 				break;
 
 			panelremove(dsp, pn, True);
+			clientlistupdate(dsp, root);
 
 			if (numactive > 0)
 				panelenter(dsp);
@@ -1400,6 +1425,7 @@ int main(int argn, char *argv[]) {
 
 			if (evt.xunmap.send_event) {
 				panelremove(dsp, pn, False);
+				clientlistupdate(dsp, root);
 				if (numactive > 0)
 					panelenter(dsp);
 				else if (numpanels == 0 && quitonlastclose) {

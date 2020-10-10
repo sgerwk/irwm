@@ -566,6 +566,7 @@ int panelswap(int pn1, int pn2) {
 void panelresize(Display *dsp, XWindowAttributes base) {
 	if (activepanel == -1)
 		return;
+	XSetWindowBorderWidth(dsp, panel[activepanel].content, 0);
 	XMoveResizeWindow(dsp, panel[activepanel].content,
 		0, 0, base.width, base.height);
 }

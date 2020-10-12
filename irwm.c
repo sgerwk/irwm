@@ -1244,7 +1244,7 @@ int main(int argn, char *argv[]) {
 
 				/* move pointer (for small windows) */
 
-	XWarpPointer(dsp, None, root, 0, 0, 0, 0, 10, 10);
+	XWarpPointer(dsp, None, root, 0, 0, 0, 0, rwa.x + 10, rwa.y + 10);
 
 				/* grab keys */
 

@@ -1517,6 +1517,7 @@ int main(int argn, char *argv[]) {
 					/* other events */
 
 		case Expose:
+			printf("Expose\n");
 			if (evt.xexpose.window == panelwindow.window)
 				drawpanel(dsp, &panelwindow, activepanel);
 			if (evt.xexpose.window == progswindow.window)

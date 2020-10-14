@@ -1531,8 +1531,8 @@ int main(int argn, char *argv[]) {
 			if (emessage.message_type == net_wm_state &&
 			    emessage.format == 32) {
 				j = emessage.data.l[0];
-				printf("\t\t%s", j == 0 ? "ADD" :
-					j == 1 ? "REMOVE" : "TOGGLE");
+				printf("\t\t%s", j == 0 ? "REMOVE" :
+					j == 1 ? "ADD" : "TOGGLE");
 				for (i = 1; i < 2; i++)  {
 					j = emessage.data.l[i];
 					if (j == 0)

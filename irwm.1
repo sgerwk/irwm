@@ -99,6 +99,13 @@ LOGLIST
 print list of windows in the log file
 .TP
 .I
+POSITIONFIX
+(Control-Shift-p)
+toggle moving override_redirect windows in the screen; some applications place
+menus and other controls outside the screen, where they are unusable; when this
+function is active, they are automatically moved in the screen
+.TP
+.I
 RESTART
 (Control-Shift-Alt-Tab)
 close all windows and restart irwm
@@ -321,6 +328,7 @@ numbers are:
 #define RESTART      3		/* restart irwm */
 #define QUIT         4		/* quit irwm */
 #define LOGLIST      5		/* print panels in the log file */
+#define POSITIONFIX  6		/* toggle: fix position of override windows */
 
 #define PANELWINDOW 10		/* show the window list */
 #define PROGSWINDOW 11		/* show the program list */

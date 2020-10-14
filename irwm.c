@@ -21,6 +21,7 @@
  * 			in lists: up/down/return/escape
  *			only in panel list: c = close panel
  *   ctrl-shift-l	print panels in the log file
+ *   ctrl-shift-p	toggle fixing the position of the override window
  *   ctrl-shift-tab	quit
  *
  * lirc, or ClientMessage of message_type "IRWM" to the root window:
@@ -31,6 +32,7 @@
  *   RESTART		restart irwm
  *   QUIT		quit irwm
  *   LOGLIST		print the list of panels in the log file
+ *   POSITIONFIX	toggle fixing the position of override windows
  *
  *   PANELWINDOW	show/hide the panel list window
  *   PROGSWINDOW	show/hide the program list window
@@ -127,6 +129,7 @@
 #define RESTART       3		/* restart irwm */
 #define QUIT          4		/* quit irwm */
 #define LOGLIST       5		/* print panels in the log file */
+#define POSITIONFIX   6		/* toggle: fix position of override windows */
 
 #define PANELWINDOW  10		/* show the panel list window */
 #define PROGSWINDOW  11		/* show the programs window */
@@ -152,6 +155,7 @@ struct {
 	{RESTART,	"RESTART", XK_Tab, ControlMask | ShiftMask | Mod1Mask},
 	{QUIT,		"QUIT",		XK_Tab,	ControlMask | ShiftMask},
 	{LOGLIST,	"LOGLIST",	XK_l,	ControlMask | ShiftMask},
+	{POSITIONFIX,	"POSITIONFIX",	XK_p,	ControlMask | ShiftMask},
 	{PANELWINDOW,	"PANELWINDOW",	XK_Tab,		Mod1Mask},
 	{PROGSWINDOW,	"PROGSWINDOW",	XK_Tab,		ControlMask},
 	{-1,		"ENDGRAB",	XK_VoidSymbol,	0},
@@ -343,7 +347,10 @@ int forkprogram(char *path, char *arg) {
  * the override_redirect windows
  */
 #define MAXOVERRIDE 1000
-Window override[MAXOVERRIDE];
+struct {
+	Window win;
+	int nx, ny;
+} override[MAXOVERRIDE];
 int numoverride = 0;
 
 /*
@@ -354,7 +361,9 @@ void overrideadd(Window win) {
 		printf("WARNING: too many override_redirect windows\n");
 		return;
 	}
-	override[numoverride] = win;
+	override[numoverride].win = win;
+	override[numoverride].nx = -1000;
+	override[numoverride].ny = -1000;
 	numoverride++;
 }
 
@@ -364,7 +373,7 @@ void overrideadd(Window win) {
 void overrideremove(Window win) {
 	int i;
 	for (i = 0; i < numoverride; i++)
-		if (override[i] == win) {
+		if (override[i].win == win) {
 			numoverride--;
 			override[i] = override[numoverride];
 			return;
@@ -377,7 +386,30 @@ void overrideremove(Window win) {
 void overrideraise(Display *dsp) {
 	int i;
 	for (i = 0; i < numoverride; i++)
-		XRaiseWindow(dsp, override[i]);
+		XRaiseWindow(dsp, override[i].win);
+}
+
+/*
+ * fix placement of an override windows
+ */
+void overrideplace(Display *dsp, Window win, XWindowAttributes *rwa) {
+	XWindowAttributes wa;
+	int i;
+	for (i = 0; i < numoverride; i++) {
+		if (override[i].win == win) {
+			XGetWindowAttributes(dsp, win, &wa);
+			if (override[i].nx == wa.x && override[i].ny == wa.y)
+				return;
+			override[i].nx = wa.x < rwa->x ? rwa->x : wa.x;
+			override[i].ny = wa.y < rwa->y ? rwa->y : wa.y;
+			if (override[i].nx == wa.x && override[i].ny == wa.y)
+				return;
+			XMoveWindow(dsp, win, override[i].nx, override[i].ny);
+			printf("MOVE 0x%ld to %d,%d\n", win,
+				override[i].nx, override[i].ny);
+			return;
+		}
+	}
 }
 
 /*
@@ -931,6 +963,7 @@ int main(int argn, char *argv[]) {
 	KeySym shortcuts[100];
 
 	Bool uselirc = False, singlekey = False;
+	Bool overridefix = False;
 	Bool quitonlastclose = False, confirmquit = False;
 	Bool run, restart;
 	int command;
@@ -1340,6 +1373,8 @@ int main(int argn, char *argv[]) {
 			printf("border_width=%d ", econfigure.border_width);
 			printf("above=0x%lx ", econfigure.above);
 			printf("\n");
+			if (overridefix)
+				overrideplace(dsp, econfigure.window, &rwa);
 			break;
 		case CreateNotify:
 			printf("CreateNotify\n");
@@ -1401,6 +1436,8 @@ int main(int argn, char *argv[]) {
 			printf("\n");
 
 			pn = panelfind(evt.xunmap.window, CONTENT);
+			if (pn == -1 && overridefix)
+				overrideplace(dsp, evt.xunmap.window, &rwa);
 			if (pn == -1 || pn == activepanel)
 				break;
 			panelleave(dsp);
@@ -1699,7 +1736,13 @@ int main(int argn, char *argv[]) {
 			for (pn = 0; pn < numpanels; pn++)
 				panelprint("LOG", pn);
 			for (i = 0; i < numoverride; i++)
-				printf("OVERRIDE 0x%lx\n", override[i]);
+				printf("OVERRIDE 0x%lx %d,%d\n",
+					override[i].win,
+					override[i].nx, override[i].ny);
+			break;
+		case POSITIONFIX:
+			overridefix = ! overridefix;
+			printf("OVERRIDEFIX %d\n", overridefix);
 			break;
 		}
 

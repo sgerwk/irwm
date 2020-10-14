@@ -955,7 +955,7 @@ int main(int argn, char *argv[]) {
 	ListWindow panelwindow, progswindow, confirmwindow;
 	XWindowChanges wc;
 	int listwidth, listheight;
-	Atom irwm;
+	Atom irwm, net_wm_state;
 	int pn;
 	char *message;
 	int i, j;
@@ -1257,6 +1257,7 @@ int main(int argn, char *argv[]) {
 	wm_state = XInternAtom(dsp, "WM_STATE", False);
 	wm_protocols = XInternAtom(dsp, "WM_PROTOCOLS", False);
 	wm_delete_window = XInternAtom(dsp, "WM_DELETE_WINDOW", False);
+	net_wm_state = XInternAtom(dsp, "_NET_WM_STATE", False);
 	net_client_list = XInternAtom(dsp, "_NET_CLIENT_LIST", False);
 	net_client_list_stacking =
 		XInternAtom(dsp, "_NET_CLIENT_LIST_STACKING", False);
@@ -1521,12 +1522,28 @@ int main(int argn, char *argv[]) {
 					printf(" %ld", emessage.data.l[i]);
 				break;
 			}
+			printf("\n");
 
 			if (emessage.message_type == irwm &&
 			    emessage.format == 32)
 				command = emessage.data.l[0];
 
-			printf("\n");
+			if (emessage.message_type == net_wm_state &&
+			    emessage.format == 32) {
+				j = emessage.data.l[0];
+				printf("\t\t%s", j == 0 ? "ADD" :
+					j == 1 ? "REMOVE" : "TOGGLE");
+				for (i = 1; i < 2; i++)  {
+					j = emessage.data.l[i];
+					if (j == 0)
+						continue;
+					message = XGetAtomName(dsp, j);
+					printf(" %s", message);
+					XFree(message);
+				}
+				printf("\n");
+			}
+
 			break;
 
 					/* keypress events */

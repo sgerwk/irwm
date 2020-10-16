@@ -1507,7 +1507,7 @@ int main(int argn, char *argv[]) {
 			if (pn == -1 || pn == activepanel)
 				break;
 
-			printf("\tswitching to %d\n", pn);
+			printf("\tswitching to panel %d\n", pn);
 			panelleave(dsp);
 			activepanel = pn;
 			panelenter(dsp);

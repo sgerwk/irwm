@@ -1311,7 +1311,7 @@ int main(int argn, char *argv[]) {
 				/* get X event */
 
 		XNextEvent(dsp, &evt);
-		printf("[%ld] ", evt.xany.serial);
+		printf("[%ld] ", evt.type == Error ? None : evt.xany.serial);
 
 		command = NOCOMMAND;
 

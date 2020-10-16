@@ -1549,7 +1549,7 @@ int main(int argn, char *argv[]) {
 				j = emessage.data.l[0];
 				printf("\t\t%s", j == 0 ? "REMOVE" :
 					j == 1 ? "ADD" : "TOGGLE");
-				for (i = 1; i < 2; i++)  {
+				for (i = 1; i <= 2; i++)  {
 					j = emessage.data.l[i];
 					if (j == 0)
 						continue;

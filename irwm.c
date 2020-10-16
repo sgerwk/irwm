@@ -598,7 +598,7 @@ int panelswap(int pn1, int pn2) {
 void panelresize(Display *dsp, int pn, XWindowAttributes base) {
 	if (activepanel == -1)
 		return;
-	printf("PANELRESIZE 0x%lx\n", panel[pn].content);
+	panelprint("RESIZE", pn);
 	XSetWindowBorderWidth(dsp, panel[pn].content, 0);
 	XMoveResizeWindow(dsp, panel[pn].content,
 		0, 0, base.width, base.height);

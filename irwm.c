@@ -593,13 +593,14 @@ int panelswap(int pn1, int pn2) {
 }
 
 /*
- * resize the current panel
+ * resize a panel
  */
-void panelresize(Display *dsp, XWindowAttributes base) {
+void panelresize(Display *dsp, int pn, XWindowAttributes base) {
 	if (activepanel == -1)
 		return;
-	XSetWindowBorderWidth(dsp, panel[activepanel].content, 0);
-	XMoveResizeWindow(dsp, panel[activepanel].content,
+	printf("PANELRESIZE 0x%lx\n", panel[pn].content);
+	XSetWindowBorderWidth(dsp, panel[pn].content, 0);
+	XMoveResizeWindow(dsp, panel[pn].content,
 		0, 0, base.width, base.height);
 }
 
@@ -1323,7 +1324,7 @@ int main(int argn, char *argv[]) {
 			if (activepanel != -1)
 				panelleave(dsp);
 			activepanel = pn;
-			panelresize(dsp, rwa);
+			panelresize(dsp, pn, rwa);
 			panelenter(dsp);
 			raiselists(dsp,
 				&panelwindow, &confirmwindow, &progswindow);
@@ -1339,12 +1340,13 @@ int main(int argn, char *argv[]) {
 			printf("above=0x%lx ", erconfigure.above);
 			printf("\n");
 
-			if (panelfind(erconfigure.window, PANEL) != -1 ||
-			    panelfind(erconfigure.window, CONTENT) != -1) {
-				panelresize(dsp, rwa);
+			pn = panelfind(erconfigure.window, PANEL | CONTENT);
+			if (pn != -1) {
+				panelresize(dsp, pn, rwa);
 				break;
 			}
 
+			printf("CONFIGURE 0x%lx\n", erconfigure.window);
 			wc.x = erconfigure.x;
 			wc.y = erconfigure.y;
 			wc.width = erconfigure.width;
@@ -1699,7 +1701,7 @@ int main(int argn, char *argv[]) {
 				if (p)
 					forkprogram(p, NULL);
 				else if (! strcmp(t, "resize"))
-					panelresize(dsp, rwa);
+					panelresize(dsp, activepanel, rwa);
 				else if (! strcmp(t, "restart")) {
 					run = False;
 					restart = True;

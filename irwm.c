@@ -955,6 +955,7 @@ int main(int argn, char *argv[]) {
 
 	char *displayname = NULL, *fontname = NULL;
 	Display *dsp;
+	int (*defaulthandler)(Display *, XErrorEvent *);
 	Window root, win;
 	XWindowAttributes rwa, *irwa = NULL;
 	GC gc;
@@ -991,6 +992,7 @@ int main(int argn, char *argv[]) {
 	XReparentEvent ereparent;
 	XClientMessageEvent emessage;
 	XKeyEvent ekey;
+	XErrorEvent err;
 
 				/* parse options */
 
@@ -1169,7 +1171,7 @@ int main(int argn, char *argv[]) {
 		printf("cannot open display: %s\n", displayname);
 		exit(EXIT_FAILURE);
 	}
-	// XSetErrorHandler(handler);
+	defaulthandler = XSetErrorHandler(handler);
 
 				/* root window */
 
@@ -1604,6 +1606,9 @@ int main(int argn, char *argv[]) {
 			break;
 
 		case Error:
+			printf("Error\n");
+			err = evt.xerror;
+			defaulthandler(dsp, &err);
 			break;
 		default:
 			printf("Unexpected event, type=%d\n", evt.type);

@@ -225,6 +225,17 @@ Atom wm_state, wm_protocols, wm_delete_window;
 Atom net_client_list, net_client_list_stacking;
 
 /*
+ * error handler
+ */
+#define Error 0
+#define Reply 1
+int handler(Display *d, XErrorEvent *e) {
+	printf("error handler called\n");
+	XPutBackEvent(d, (XEvent *) e);
+	return 0;
+}
+
+/*
  * the lirc client
  */
 #ifndef LIRC
@@ -1158,6 +1169,7 @@ int main(int argn, char *argv[]) {
 		printf("cannot open display: %s\n", displayname);
 		exit(EXIT_FAILURE);
 	}
+	// XSetErrorHandler(handler);
 
 				/* root window */
 
@@ -1591,6 +1603,8 @@ int main(int argn, char *argv[]) {
 			printf("\n");
 			break;
 
+		case Error:
+			break;
 		default:
 			printf("Unexpected event, type=%d\n", evt.type);
 		}

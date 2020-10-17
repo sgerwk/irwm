@@ -102,6 +102,7 @@
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
+#include <X11/Xproto.h>
 #ifdef LIRC
 #include <lirc_client.h>
 #endif
@@ -993,6 +994,7 @@ int main(int argn, char *argv[]) {
 	XClientMessageEvent emessage;
 	XKeyEvent ekey;
 	XErrorEvent err;
+	char numstring[50], errortext[2000];
 
 				/* parse options */
 
@@ -1608,6 +1610,26 @@ int main(int argn, char *argv[]) {
 		case Error:
 			printf("Error\n");
 			err = evt.xerror;
+			if (err.error_code == BadWindow &&
+			    (err.request_code == X_MapWindow ||
+			     err.request_code == X_ChangeProperty ||
+			     err.request_code == X_SetInputFocus ||
+			     err.request_code == X_ConfigureWindow ||
+			     err.request_code == X_GetWindowAttributes)) {
+				printf("NOTE: ignoring a BadWindow error ");
+				printf("window=0x%lx ", err.resourceid);
+				sprintf(numstring, "%d", err.request_code);
+				XGetErrorDatabaseText(dsp, "XRequest",
+					numstring, "", errortext, 2000);
+				printf("%s\n", errortext);
+				break;
+			}
+			if (err.error_code == BadAtom &&
+			    err.request_code == X_GetAtomName) {
+				printf("NOTE: ignoring a BadAtom error ");
+				printf("on a X_GetAtomName request\n");
+				break;
+			}
 			defaulthandler(dsp, &err);
 			break;
 		default:

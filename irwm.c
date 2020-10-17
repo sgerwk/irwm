@@ -1492,8 +1492,6 @@ int main(int argn, char *argv[]) {
 				break;
 			printf("\tcontent in panel %d\n", pn);
 
-			win = panel[pn].leader;
-
 			if (evt.xunmap.send_event) {
 				panelremove(dsp, pn, False);
 				clientlistupdate(dsp, root);
@@ -1515,6 +1513,7 @@ int main(int argn, char *argv[]) {
 					&confirmwindow, &progswindow);
 			}
 
+			win = panel[pn].leader;
 			if (win == None)
 				break;
 			printf("\tleader is 0x%lx\n", win);

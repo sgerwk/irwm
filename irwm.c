@@ -404,16 +404,30 @@ void overrideraise(Display *dsp) {
 /*
  * fix placement of an override windows
  */
+int randombetween(int d, int c, int rc) {
+	if (c >= rc && c <= rc + d)
+		return c;
+	if (rand() % 3 == 0)
+		return rc;
+	if (rand() % 3 == 0)
+		return rc + d;
+	return rc + (rand() % (d + (d < 0 ? -1 : 1)) + (d < 0 ? d : 0));
+}
 void overrideplace(Display *dsp, Window win, XWindowAttributes *rwa) {
 	XWindowAttributes wa;
 	int i;
+	int d;
 	for (i = 0; i < numoverride; i++) {
 		if (override[i].win == win) {
 			XGetWindowAttributes(dsp, win, &wa);
 			if (override[i].nx == wa.x && override[i].ny == wa.y)
 				return;
-			override[i].nx = wa.x < rwa->x ? rwa->x : wa.x;
-			override[i].ny = wa.y < rwa->y ? rwa->y : wa.y;
+
+			d = rwa->width - wa.width - 2 * wa.border_width;
+			override[i].nx = randombetween(d, wa.x, rwa->x);
+			d = rwa->height - wa.height - 2 * wa.border_width;
+			override[i].ny = randombetween(d, wa.y, rwa->y);
+
 			if (override[i].nx == wa.x && override[i].ny == wa.y)
 				return;
 			XMoveWindow(dsp, win, override[i].nx, override[i].ny);

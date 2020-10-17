@@ -364,6 +364,17 @@ struct {
 	int nx, ny;
 } override[MAXOVERRIDE];
 int numoverride = 0;
+#define UNMOVED (-10000)
+
+/*
+ * print an override window
+ */
+void overrideprint(char *type, int i) {
+	printf("OVERRIDE %d %-10.10s 0x%lx", i, type, override[i].win);
+	if (override[i].nx != UNMOVED || override[i].ny != UNMOVED)
+		printf("%d,%d", override[i].nx, override[i].ny);
+	printf("\n");
+}
 
 /*
  * add an override window
@@ -374,8 +385,9 @@ void overrideadd(Window win) {
 		return;
 	}
 	override[numoverride].win = win;
-	override[numoverride].nx = -1000;
-	override[numoverride].ny = -1000;
+	override[numoverride].nx = UNMOVED;
+	override[numoverride].ny = UNMOVED;
+	overrideprint("ADD", numoverride);
 	numoverride++;
 }
 
@@ -386,6 +398,7 @@ void overrideremove(Window win) {
 	int i;
 	for (i = 0; i < numoverride; i++)
 		if (override[i].win == win) {
+			overrideprint("REMOVE", i);
 			numoverride--;
 			override[i] = override[numoverride];
 			return;
@@ -397,8 +410,10 @@ void overrideremove(Window win) {
  */
 void overrideraise(Display *dsp) {
 	int i;
-	for (i = 0; i < numoverride; i++)
+	for (i = 0; i < numoverride; i++) {
+		overrideprint("RAISE", i);
 		XRaiseWindow(dsp, override[i].win);
+	}
 }
 
 /*
@@ -431,7 +446,8 @@ void overrideplace(Display *dsp, Window win, XWindowAttributes *rwa) {
 			if (override[i].nx == wa.x && override[i].ny == wa.y)
 				return;
 			XMoveWindow(dsp, win, override[i].nx, override[i].ny);
-			printf("MOVE 0x%ld to %d,%d\n", win,
+			overrideprint("MOVE", i);
+			printf("\tmoved to %d,%d\n",
 				override[i].nx, override[i].ny);
 			return;
 		}
@@ -1414,10 +1430,11 @@ int main(int argn, char *argv[]) {
 			printf("\t0x%lx ", evt.xcreatewindow.window);
 			printf("parent=0x%lx", evt.xcreatewindow.parent);
 			if (evt.xcreatewindow.override_redirect) {
-				printf(" override_redirect");
+				printf(" override_redirect\n");
 				overrideadd(evt.xcreatewindow.window);
 			}
-			printf("\n");
+			else
+				printf("\n");
 			break;
 		case DestroyNotify:
 			printf("DestroyNotify\n");
@@ -1809,9 +1826,7 @@ int main(int argn, char *argv[]) {
 			for (pn = 0; pn < numpanels; pn++)
 				panelprint("LOG", pn);
 			for (i = 0; i < numoverride; i++)
-				printf("OVERRIDE 0x%lx %d,%d\n",
-					override[i].win,
-					override[i].nx, override[i].ny);
+				overrideprint("LOG", i);
 			break;
 		case POSITIONFIX:
 			overridefix = ! overridefix;

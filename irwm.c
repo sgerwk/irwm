@@ -79,16 +79,17 @@
 /*
  * ui:
  *
- * the list of programs that can be run and the list of currently active panels
- * have each its own window; they are respectively drawn by drawprogs() and
- * drawpanel(), which call drawlist() and are called on Expose events on their
- * windows
+ * the list of programs that can be run, the list of currently active panels
+ * and confirmation for exit have each its own window; they are respectively
+ * drawn by drawprogs(), drawpanel() and drawconfirm(); they all call
+ * drawlist() and are called on Expose events on their windows
  *
  * these windows are always present and are always both raised by raiselists()
  * when something changes (map, unmap and destroy event), but are only mapped
- * in response of commands PROGSWINDOW and PANELWINDOW; the Boolean variables
- * showprogs and showpanels store whether they are mapped; they are unmapped on
- * commands OKWINDOW and HIDEWINDOW or when the other one is mapped
+ * in response to the commands PROGSWINDOW, PANELWINDOW and QUIT, or when
+ * "quit" is selected in the program list; the Boolean variables showprogs,
+ * showpanels and showconfirm store whether they are mapped; they are unmapped
+ * on commands OKWINDOW and HIDEWINDOW or when the other one is mapped
  */
 
 #include <stdlib.h>

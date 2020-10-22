@@ -891,7 +891,7 @@ void drawpanel(Display *dsp, ListWindow *lw, int activepanel) {
 	}
 	elements[numactive] = NULL;
 
-	drawlist(dsp, lw, "IRWM: panel list", elements, a, help);
+	drawlist(dsp, lw, IRWM ": panel list", elements, a, help);
 	free(elements);
 }
 
@@ -910,7 +910,7 @@ void drawprogs(Display *dsp, ListWindow *lw, int selected) {
 		elements[i] = strdup(programs[i].title);
 	elements[numprograms] = NULL;
 
-	drawlist(dsp, lw, "IRWM: programs", elements, selected, help);
+	drawlist(dsp, lw, IRWM ": programs", elements, selected, help);
 
 	for (i = 0; i < numprograms; i++)
 		free(elements[i]);
@@ -923,7 +923,7 @@ void drawprogs(Display *dsp, ListWindow *lw, int selected) {
 void drawconfirm(Display *dsp, ListWindow *cw, int selected) {
 	char *elements[] = {"yes", "no", NULL};
 	char *help[] = {NULL};
-	drawlist(dsp, cw, "IRWM: confirm quit", elements, selected, help);
+	drawlist(dsp, cw, IRWM ": confirm quit", elements, selected, help);
 }
 
 /*

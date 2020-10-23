@@ -112,6 +112,33 @@
  * moving them again
  */
 
+/*
+ * the error handler
+ *
+ * regular programs should not make wrong requests, negating the need for an
+ * error handler; this is not the case with window managers and other programs
+ * that need to operate on windows that are outside their control
+ *
+ * the programs may close their windows at any time, but the window manager
+ * receives notifications one at time; dealing with a closure may require
+ * entering the panel of another window that is already closed, but its closure
+ * has not yet been notified to the window manager; entering a panel requires
+ * operating on its window, firing a string of errors from the X server
+ *
+ * a common case are exit confirmation dialogs; for example, gedit asks for
+ * confirmation before exiting when the file has not been saved; clicking on
+ * the "don't save" button makes it close both the dialog and its main window;
+ * when the closure of the dialog is notified to irwm, it removes its panel and
+ * enters the panel under it; this is often the main gedit window, which is
+ * already closed
+ *
+ * the error handler is also needed because irwm prints the name of atoms it
+ * receives as window manager hints; a program may send arbitrary integers, not
+ * representing any atom; the X server send back an error when asked for their
+ * strings; the default error handler would terminate the window manager in
+ * such cases
+ */
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

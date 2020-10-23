@@ -775,19 +775,23 @@ int panelswitch(Display *dsp, int rel) {
  * update the list of managed windows
  */
 void clientlistupdate(Display *dsp, Window root) {
-	Window *list;
+	Window *list, *slist;
 	int i;
 
 	list = malloc(numpanels * sizeof(Window));
-	for (i = 0; i < numpanels; i++)
+	slist = malloc(numpanels * sizeof(Window));
+	for (i = 0; i < numpanels; i++) {
 		list[i] = panel[i].content;
+		slist[i] = panel[(activepanel + 1 + i) % numpanels].content;
+	}
 	XChangeProperty(dsp, root, net_client_list,
 		XA_WINDOW, 32, PropModeReplace,
 		(unsigned char *) list, numpanels);
 	XChangeProperty(dsp, root, net_client_list_stacking,
 		XA_WINDOW, 32, PropModeReplace,
-		(unsigned char *) list, numpanels);
+		(unsigned char *) slist, numpanels);
 	free(list);
+	free(slist);
 }
 
 /*

@@ -92,6 +92,26 @@
  * on commands OKWINDOW and HIDEWINDOW or when the other one is mapped
  */
 
+/*
+ * override_redirect windows
+ *
+ * windows with the override_redirect flag usually stay over the regular
+ * windows; irwm does not reparent them to a panel, but keeps a list of them
+ * and raises them every time it enters a panel
+ *
+ * a typical use of override windows is to implement menus; programs often
+ * misplace them too close to the screen border, where parts of them fall
+ * outside the screen; irwm moves them inside the screen; the POSITIONFIX
+ * command toggles this behaviour, which is disabled by default
+ *
+ * a special case are override windows that are larger or taller than the
+ * screen; irwm moves them in a random position that makes them fill the width
+ * or the height of the screen, with a preference to aligning them to the
+ * horizontal or vertical borders; opening such a menu multiple times allows
+ * eventually accessing all its items; the target position is saved to avoid
+ * moving them again
+ */
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

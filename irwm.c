@@ -61,6 +61,8 @@
  * allow arguments to programs in config file
  *
  * select also property change events to update window names when they change
+ *
+ * the override_redirect flag may be changed after a window is created
  */
 
 /*

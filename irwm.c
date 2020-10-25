@@ -410,6 +410,7 @@ int forkprogram(char *path, char *arg) {
 struct {
 	Window win;
 	int nx, ny;
+	Bool ontop;
 } override[MAXOVERRIDE];
 int numoverride = 0;
 #define UNMOVED (-10000)
@@ -446,6 +447,7 @@ void overrideadd(Window win) {
 	override[numoverride].win = win;
 	override[numoverride].nx = UNMOVED;
 	override[numoverride].ny = UNMOVED;
+	override[numoverride].ontop = False;
 	overrideprint("ADD", numoverride);
 	numoverride++;
 }
@@ -469,10 +471,16 @@ void overrideremove(Window win) {
  */
 void overrideraise(Display *dsp) {
 	int i;
-	for (i = 0; i < numoverride; i++) {
-		overrideprint("RAISE", i);
-		XRaiseWindow(dsp, override[i].win);
-	}
+	for (i = 0; i < numoverride; i++)
+		if (! override[i].ontop) {
+			overrideprint("RAISE", i);
+			XRaiseWindow(dsp, override[i].win);
+		}
+	for (i = 0; i < numoverride; i++)
+		if (override[i].ontop) {
+			overrideprint("RAISE", i);
+			XRaiseWindow(dsp, override[i].win);
+		}
 }
 
 /*
@@ -1062,10 +1070,10 @@ int main(int argn, char *argv[]) {
 	ListWindow panelwindow, progswindow, confirmwindow;
 	XWindowChanges wc;
 	int listwidth, listheight;
-	Atom irwm, net_wm_state;
+	Atom irwm, net_wm_state, net_wm_state_stays_on_top;
 	int pn;
 	char *message;
-	int i, j;
+	int i, j, c, w;
 	Bool tran;
 	KeySym shortcuts[100];
 
@@ -1368,6 +1376,8 @@ int main(int argn, char *argv[]) {
 	wm_protocols = XInternAtom(dsp, "WM_PROTOCOLS", False);
 	wm_delete_window = XInternAtom(dsp, "WM_DELETE_WINDOW", False);
 	net_wm_state = XInternAtom(dsp, "_NET_WM_STATE", False);
+	net_wm_state_stays_on_top =
+		XInternAtom(dsp, "_NET_WM_STATE_STAYS_ON_TOP", False);
 	net_client_list = XInternAtom(dsp, "_NET_CLIENT_LIST", False);
 	net_client_list_stacking =
 		XInternAtom(dsp, "_NET_CLIENT_LIST_STACKING", False);
@@ -1641,9 +1651,9 @@ int main(int argn, char *argv[]) {
 
 			if (emessage.message_type == net_wm_state &&
 			    emessage.format == 32) {
-				j = emessage.data.l[0];
-				printf("\t\t%s", j == 0 ? "REMOVE" :
-					j == 1 ? "ADD" : "TOGGLE");
+				c = emessage.data.l[0];
+				printf("\t\t%s", c == 0 ? "REMOVE" :
+					c == 1 ? "ADD" : "TOGGLE");
 				for (i = 1; i <= 2; i++)  {
 					j = emessage.data.l[i];
 					if (j == 0)
@@ -1651,6 +1661,16 @@ int main(int argn, char *argv[]) {
 					message = XGetAtomName(dsp, j);
 					printf(" %s", message);
 					XFree(message);
+
+					w = overrideexists(emessage.window);
+					if (w == -1)
+						continue;
+					if ((Atom) j != net_wm_state_stays_on_top)
+						continue;
+					override[w].ontop =
+						c == 0 ? False :
+						c == 1 ? True :
+						         ! override[w].ontop;
 				}
 				printf("\n");
 			}

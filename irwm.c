@@ -272,6 +272,7 @@ int eventtocommand(Display *dsp, XKeyEvent e, KeySym *list) {
  */
 Atom wm_state, wm_protocols, wm_delete_window;
 Atom net_client_list, net_client_list_stacking;
+Atom net_active_window;
 
 /*
  * error handler
@@ -537,6 +538,7 @@ int numactive = 0;
 int activepanel = -1;
 Window activecontent = None;
 Bool unmaponleave = False;	/* unmap window when switching to another */
+Window activewindow = None;	/* may not be the content of a panel */
 
 /*
  * print data of a panel
@@ -639,8 +641,10 @@ int panelremove(Display *dsp, int pn, int destroy) {
 	if (pn < 0 || pn >= numpanels)
 		return -1;
 	c = panel[pn].content;
-	if (c == activecontent)
+	if (c == activecontent) {
 		activecontent = None;
+		printf("ACTIVECONTENT 0x%lx\n", activecontent);
+	}
 
 	j = 0;
 	n = numpanels;
@@ -732,13 +736,42 @@ void panelleave(Display *dsp) {
 }
 
 /*
+ * update the lists of managed windows
+ */
+void clientlistupdate(Display *dsp, Window root) {
+	Window *list, *slist;
+	int i;
+
+	XChangeProperty(dsp, root, net_active_window,
+		XA_WINDOW, 32, PropModeReplace,
+		(unsigned char *) &activewindow, 1);
+
+	list = malloc(numpanels * sizeof(Window));
+	slist = malloc(numpanels * sizeof(Window));
+	for (i = 0; i < numpanels; i++) {
+		list[i] = panel[i].content;
+		slist[i] = panel[(activepanel + 1 + i) % numpanels].content;
+	}
+	XChangeProperty(dsp, root, net_client_list,
+		XA_WINDOW, 32, PropModeReplace,
+		(unsigned char *) list, numpanels);
+	XChangeProperty(dsp, root, net_client_list_stacking,
+		XA_WINDOW, 32, PropModeReplace,
+		(unsigned char *) slist, numpanels);
+	free(list);
+	free(slist);
+}
+
+/*
  * enter the current panel
  */
-void panelenter(Display *dsp) {
+void panelenter(Display *dsp, Window root) {
 	long data[2];
 
 	if (activepanel == -1) {
 		activecontent = None;
+		printf("ACTIVECONTENT 0x%lx\n", activecontent);
+		clientlistupdate(dsp, root);
 		return;
 	}
 
@@ -760,7 +793,12 @@ void panelenter(Display *dsp) {
 		printf("NOTE: active content already active\n");
 		return;
 	}
+
 	activecontent = panel[activepanel].content;
+	printf("ACTIVECONTENT 0x%lx\n", activecontent);
+	activewindow = panel[activepanel].content;
+	printf("ACTIVEWINDOW 0x%lx\n", activecontent);
+	clientlistupdate(dsp, root);
 
 	XMapWindow(dsp, panel[activepanel].content);
 	XMapWindow(dsp, panel[activepanel].panel);
@@ -779,38 +817,15 @@ void panelenter(Display *dsp) {
 /*
  * switch to next/previous panel
  */
-int panelswitch(Display *dsp, int rel) {
+int panelswitch(Display *dsp, Window root, int rel) {
 	if (activepanel == -1)
 		return -1;
 	panelleave(dsp);
 	do {
 		MODULEINCREASE(activepanel, numpanels, rel);
 	} while (panel[activepanel].withdrawn);
-	panelenter(dsp);
+	panelenter(dsp, root);
 	return 0;
-}
-
-/*
- * update the list of managed windows
- */
-void clientlistupdate(Display *dsp, Window root) {
-	Window *list, *slist;
-	int i;
-
-	list = malloc(numpanels * sizeof(Window));
-	slist = malloc(numpanels * sizeof(Window));
-	for (i = 0; i < numpanels; i++) {
-		list[i] = panel[i].content;
-		slist[i] = panel[(activepanel + 1 + i) % numpanels].content;
-	}
-	XChangeProperty(dsp, root, net_client_list,
-		XA_WINDOW, 32, PropModeReplace,
-		(unsigned char *) list, numpanels);
-	XChangeProperty(dsp, root, net_client_list_stacking,
-		XA_WINDOW, 32, PropModeReplace,
-		(unsigned char *) slist, numpanels);
-	free(list);
-	free(slist);
 }
 
 /*
@@ -1378,9 +1393,12 @@ int main(int argn, char *argv[]) {
 	net_wm_state = XInternAtom(dsp, "_NET_WM_STATE", False);
 	net_wm_state_stays_on_top =
 		XInternAtom(dsp, "_NET_WM_STATE_STAYS_ON_TOP", False);
+	net_active_window = XInternAtom(dsp, "_NET_ACTIVE_WINDOW", False);
 	net_client_list = XInternAtom(dsp, "_NET_CLIENT_LIST", False);
 	net_client_list_stacking =
 		XInternAtom(dsp, "_NET_CLIENT_LIST_STACKING", False);
+
+	clientlistupdate(dsp, root);
 
 				/* lirc client */
 
@@ -1438,13 +1456,12 @@ int main(int argn, char *argv[]) {
 				tran ? win : None);
 			if (pn == -1)
 				break;
-			clientlistupdate(dsp, root);
 
 			if (activepanel != -1)
 				panelleave(dsp);
 			activepanel = pn;
 			panelresize(dsp, pn, rwa);
-			panelenter(dsp);
+			panelenter(dsp, root);
 			raiselists(dsp,
 				&panelwindow, &confirmwindow, &progswindow);
 			break;
@@ -1523,16 +1540,16 @@ int main(int argn, char *argv[]) {
 				break;
 
 			panelremove(dsp, pn, True);
-			clientlistupdate(dsp, root);
 
 			if (numactive > 0)
-				panelenter(dsp);
+				panelenter(dsp, root);
 			else if (numpanels == 0 && quitonlastclose) {
 				run = False;
 				break;
 			}
 			else {
 				activepanel = -1;
+				clientlistupdate(dsp, root);
 				XSetInputFocus(dsp, root,
 					RevertToParent, CurrentTime);
 				printf("to quit on last close, pass -q\n");
@@ -1565,7 +1582,7 @@ int main(int argn, char *argv[]) {
 				break;
 			panelleave(dsp);
 			activepanel = pn;
-			panelenter(dsp);
+			panelenter(dsp, root);
 			raiselists(dsp,
 				&panelwindow, &confirmwindow, &progswindow);
 
@@ -1584,15 +1601,15 @@ int main(int argn, char *argv[]) {
 
 			if (evt.xunmap.send_event) {
 				panelremove(dsp, pn, False);
-				clientlistupdate(dsp, root);
 				if (numactive > 0)
-					panelenter(dsp);
+					panelenter(dsp, root);
 				else if (numpanels == 0 && quitonlastclose) {
 					run = False;
 					break;
 				}
 				else {
 					activepanel = -1;
+					clientlistupdate(dsp, root);
 					XSetInputFocus(dsp, root,
 						RevertToParent, CurrentTime);
 					printf("to quit on last close, ");
@@ -1615,7 +1632,7 @@ int main(int argn, char *argv[]) {
 			printf("\tswitching to panel %d\n", pn);
 			panelleave(dsp);
 			activepanel = pn;
-			panelenter(dsp);
+			panelenter(dsp, root);
 			raiselists(dsp,
 				&panelwindow, &confirmwindow, &progswindow);
 
@@ -1648,6 +1665,15 @@ int main(int argn, char *argv[]) {
 			if (emessage.message_type == irwm &&
 			    emessage.format == 32)
 				command = emessage.data.l[0];
+
+			if (emessage.message_type == net_active_window &&
+			    emessage.format == 32) {
+				XRaiseWindow(dsp, emessage.window);
+				activewindow = emessage.window;
+				printf("ACTIVEWINDOW 0x%lx\n", activewindow);
+				clientlistupdate(dsp, root);
+				overrideraise(dsp);
+			}
 
 			if (emessage.message_type == net_wm_state &&
 			    emessage.format == 32) {
@@ -1768,7 +1794,7 @@ int main(int argn, char *argv[]) {
 				for (i = 0, j = 0; i < activepanel; i++)
 					if (! panel[activepanel].withdrawn)
 						j++;
-				panelswitch(dsp, command - NUMWINDOW(1) - j);
+				panelswitch(dsp, root, command - NUMWINDOW(1) - j);
 				XClearArea(dsp, panelwindow.window,
 					0, 0, 0, 0, True);
 				XRaiseWindow(dsp, panelwindow.window);
@@ -1783,7 +1809,7 @@ int main(int argn, char *argv[]) {
 			break;
 		case NEXTPANEL:
 		case PREVPANEL:
-			panelswitch(dsp, command == PREVPANEL ? -1 : 1);
+			panelswitch(dsp, root, command == PREVPANEL ? -1 : 1);
 			raiselists(dsp,
 				&panelwindow, &confirmwindow, &progswindow);
 			break;
@@ -1819,7 +1845,8 @@ int main(int argn, char *argv[]) {
 		case UPWINDOW:
 		case DOWNWINDOW:
 			if (showpanel) {
-				panelswitch(dsp, command == UPWINDOW ? -1 : 1);
+				panelswitch(dsp, root,
+					command == UPWINDOW ? -1 : 1);
 				XClearArea(dsp, panelwindow.window,
 					0, 0, 0, 0, True);
 				XRaiseWindow(dsp, panelwindow.window);

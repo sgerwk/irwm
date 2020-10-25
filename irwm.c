@@ -61,6 +61,8 @@
  * allow arguments to programs in config file
  *
  * select also property change events to update window names when they change
+ *
+ * the override_redirect flag may be changed after a window is created
  */
 
 /*
@@ -1547,12 +1549,6 @@ int main(int argn, char *argv[]) {
 			printf("\t0x%lx", evt.xmap.window);
 			printf(" parent=0x%lx", evt.xmap.event);
 			printf("\n");
-
-			if (evt.xmap.override_redirect &&
-			    overrideexists(evt.xmap.window) == -1) {
-				overrideadd(evt.xmap.window);
-				break;
-			}
 
 			pn = panelfind(evt.xunmap.window, CONTENT);
 			if (pn == -1 && overridefix)

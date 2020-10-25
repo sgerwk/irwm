@@ -527,7 +527,7 @@ struct panel {
 int numpanels = 0;
 int numactive = 0;
 int activepanel = -1;
-Window activecontent = -1;
+Window activecontent = None;
 Bool unmaponleave = False;	/* unmap window when switching to another */
 
 /*
@@ -632,7 +632,7 @@ int panelremove(Display *dsp, int pn, int destroy) {
 		return -1;
 	c = panel[pn].content;
 	if (c == activecontent)
-		activecontent = -1;
+		activecontent = None;
 
 	j = 0;
 	n = numpanels;
@@ -730,7 +730,7 @@ void panelenter(Display *dsp) {
 	long data[2];
 
 	if (activepanel == -1) {
-		activecontent = -1;
+		activecontent = None;
 		return;
 	}
 

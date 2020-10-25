@@ -15,9 +15,9 @@ CFLAGS+=-I/usr/X11R6/include
 LDFLAGS+=-L/usr/X11R6/lib
 LDLIBS+=-lX11
 
-irwm: CFLAGS+=-DLIRC
+# irwm: CFLAGS+=-DLIRC
 irwm: CFLAGS+=-DXFT -I/usr/include/freetype2
-irwm: LDLIBS+=-llirc_client
+# irwm: LDLIBS+=-llirc_client
 irwm: LDLIBS+=-lXft
 
 clean:

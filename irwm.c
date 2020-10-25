@@ -427,12 +427,12 @@ void overrideprint(char *type, int i) {
 /*
  * check whether a window is in the list of the override windows
  */
-Bool overrideexists(Window win) {
+int overrideexists(Window win) {
 	int i;
 	for (i = 0; i < numoverride; i++)
 		if (win == override[i].win)
-			return True;
-	return False;
+			return i;
+	return -1;
 }
 
 /*
@@ -1549,7 +1549,7 @@ int main(int argn, char *argv[]) {
 			printf("\n");
 
 			if (evt.xmap.override_redirect &&
-			    ! overrideexists(evt.xmap.window)) {
+			    overrideexists(evt.xmap.window) == -1) {
 				overrideadd(evt.xmap.window);
 				break;
 			}

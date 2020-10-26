@@ -229,7 +229,7 @@ struct {
 	{NUMWINDOW(8),	"NUMWINDOW(8)",	XK_8,		0},
 	{NUMWINDOW(9),	"NUMWINDOW(9)",	XK_9,		0},
 	{-1,		NULL,		XK_VoidSymbol,	0},
-	{-1,		"NUMWINDOW(XXXX)", XK_VoidSymbol,0}
+	{-1,		NULL,		XK_VoidSymbol,  0}
 };
 char *commandtostring(int command) {
 	int i;
@@ -237,6 +237,8 @@ char *commandtostring(int command) {
 		if (commandstring[i].command == command)
 			return commandstring[i].string;
 	if (command >= NUMWINDOW(0)) {
+		if (commandstring[i + 1].string == NULL)
+			commandstring[i + 1].string = malloc(100);
 		sprintf(commandstring[i + 1].string, "NUMWINDOW(%d)", command);
 		return commandstring[i + 1].string;
 	}

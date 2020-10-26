@@ -421,6 +421,7 @@ struct {
 	Bool ontop;
 } override[MAXOVERRIDE];
 int numoverride = 0;
+Bool raiseoverride = True;
 #define UNMOVED (-10000)
 
 /*
@@ -479,6 +480,8 @@ void overrideremove(Window win) {
  */
 void overrideraise(Display *dsp) {
 	int i;
+	if (! raiseoverride)
+		return;
 	for (i = 0; i < numoverride; i++)
 		if (! override[i].ontop) {
 			overrideprint("RAISE", i);

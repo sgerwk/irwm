@@ -33,9 +33,11 @@
  *   QUIT		quit irwm
  *   LOGLIST		print the list of panels in the log file
  *   POSITIONFIX	toggle fixing the position of override windows
+ *   RESIZE		resize the current panel
  *
  *   PANELWINDOW	show/hide the panel list window
  *   PROGSWINDOW	show/hide the program list window
+ *   CONFIRMWINDOW	show/hide the quit confirm dialog
  *
  *   UPWINDOW		up in the window
  *   DOWNWINDOW		down in the window
@@ -89,7 +91,7 @@
  * in response to the commands PROGSWINDOW, PANELWINDOW and QUIT, or when
  * "quit" is selected in the program list; the Boolean variables showprogs,
  * showpanels and showconfirm store whether they are mapped; they are unmapped
- * on commands OKWINDOW and HIDEWINDOW or when the other one is mapped
+ * on commands OKWINDOW and HIDEWINDOW or when another is mapped
  */
 
 /*
@@ -172,25 +174,27 @@
 /*
  * commands
  */
-#define NOCOMMAND     0		/* no command */
-#define NEXTPANEL     1		/* switch to next panel */
-#define PREVPANEL     2		/* switch to previous panel */
-#define RESTART       3		/* restart irwm */
-#define QUIT          4		/* quit irwm */
-#define LOGLIST       5		/* print panels in the log file */
-#define POSITIONFIX   6		/* toggle: fix position of override windows */
+#define NOCOMMAND      0	/* no command */
+#define NEXTPANEL      1	/* switch to next panel */
+#define PREVPANEL      2	/* switch to previous panel */
+#define RESTART        3	/* restart irwm */
+#define QUIT           4	/* quit irwm */
+#define LOGLIST        5	/* print panels in the log file */
+#define POSITIONFIX    6	/* toggle: fix position of override windows */
+#define RESIZE         7	/* resize the current panel */
 
-#define PANELWINDOW  10		/* show the panel list window */
-#define PROGSWINDOW  11		/* show the programs window */
+#define PANELWINDOW   10	/* show the panel list window */
+#define PROGSWINDOW   11	/* show the programs window */
+#define CONFIRMWINDOW 12	/* show the quit confirm dialog */
 
-#define UPWINDOW     20		/* up in the window */
-#define DOWNWINDOW   21		/* down in the window */
-#define HIDEWINDOW   22		/* hide both windows */
-#define OKWINDOW     23		/* select the current item in the window */
-#define KOWINDOW     24		/* close currently selected panel */
-#define ENDWINDOW    25		/* move currently active panel at the end */
+#define UPWINDOW      20	/* up in the window */
+#define DOWNWINDOW    21	/* down in the window */
+#define HIDEWINDOW    22	/* hide both windows */
+#define OKWINDOW      23	/* select the current item in the window */
+#define KOWINDOW      24	/* close currently selected panel */
+#define ENDWINDOW     25	/* move currently active panel at the end */
 
-#define NUMWINDOW(n) (100 + (n))	/* select entry n in the window */
+#define NUMWINDOW(n)  (100 + (n))	/* select entry n in the window */
 
 /*
  * commands, their names and keystrokes
@@ -208,6 +212,8 @@ struct {
 	{PANELWINDOW,	"PANELWINDOW",	XK_Tab,		Mod1Mask},
 	{PROGSWINDOW,	"PROGSWINDOW",	XK_Tab,		ControlMask},
 	{-1,		"ENDGRAB",	XK_VoidSymbol,	0},
+	{RESIZE,	"RESIZE",	XK_VoidSymbol,  0},
+	{CONFIRMWINDOW, "CONFIRMWINDOW", XK_VoidSymbol, 0},
 	{UPWINDOW,	"UPWINDOW",	XK_Up,		0},
 	{DOWNWINDOW,	"DOWNWINDOW",	XK_Down,	0},
 	{HIDEWINDOW,	"HIDEWINDOW",	XK_Escape,	0},
@@ -405,7 +411,7 @@ int forkprogram(char *path, char *arg) {
 }
 
 /*
- * the override_redirect windows
+ * override_redirect windows
  */
 #define MAXOVERRIDE 1000
 struct {
@@ -839,7 +845,7 @@ struct {
 int numprograms = 0;
 
 /*
- * the control windows of draws: the panel list and the program list
+ * the panel, the program and the confirmation list
  */
 typedef struct {
 	Window window;
@@ -1231,8 +1237,11 @@ int main(int argn, char *argv[]) {
 			    ! strcmp(s1, "quitonlastclose"))
 				quitonlastclose = True;
 			else if (1 == sscanf(line, "%s", s1) &&
-			    ! strcmp(s1, "confirmquit"))
+			     ! strcmp(s1, "confirmquit"))
 				confirmquit = True;
+			else if (1 == sscanf(line, "%s", s1) &&
+			     ! strcmp(s1, "positionfix"))
+				overridefix = True;
 			else if (1 == sscanf(line, "echo %[^\n]", s1))
 				printf("%s\n", s1);
 			else if (1 == sscanf(line, "font %s", s1)) {
@@ -1431,7 +1440,7 @@ int main(int argn, char *argv[]) {
 	restart = False;
 	for (run = True; run; ) {
 
-				/* get X event */
+				/* X event */
 
 		XNextEvent(dsp, &evt);
 		printf("[%ld] ", evt.type == Error ? None : evt.xany.serial);
@@ -1544,6 +1553,7 @@ int main(int argn, char *argv[]) {
 			if (numactive > 0)
 				panelenter(dsp, root);
 			else if (numpanels == 0 && quitonlastclose) {
+				printf("QUIT on last close\n");
 				run = False;
 				break;
 			}
@@ -1777,174 +1787,222 @@ int main(int argn, char *argv[]) {
 
 					/* execute command */
 
-		if (command != NOCOMMAND)
+		while (command != NOCOMMAND) {
+
+						/* print command */
+
 			printf("COMMAND %s\n", commandtostring(command));
 
-		if (command == PANELWINDOW && showpanel)
-			command = singlekey ? PROGSWINDOW : HIDEWINDOW;
-		if (command == PANELWINDOW && showprogs && singlekey)
-			command = HIDEWINDOW;
-		if (command == PROGSWINDOW && showprogs)
-			command = HIDEWINDOW;
+			if (command == PANELWINDOW && showpanel)
+				command = singlekey ? PROGSWINDOW : HIDEWINDOW;
+			if (command == PANELWINDOW && showprogs && singlekey)
+				command = HIDEWINDOW;
+			if (command == PROGSWINDOW && showprogs)
+				command = HIDEWINDOW;
+			if (command == CONFIRMWINDOW && showconfirm)
+				command = HIDEWINDOW;
 
-		if (NUMWINDOW(1) <= command) {
-			if (showpanel) {
-				if (activepanel == -1)
-					continue;
-				for (i = 0, j = 0; i < activepanel; i++)
-					if (! panel[activepanel].withdrawn)
-						j++;
-				panelswitch(dsp, root, command - NUMWINDOW(1) - j);
-				XClearArea(dsp, panelwindow.window,
-					0, 0, 0, 0, True);
-				XRaiseWindow(dsp, panelwindow.window);
-			}
-			if (showprogs)
-				progselected = command - NUMWINDOW(1);
-			command = OKWINDOW;
-		}
+						/* commands in lists */
 
-		switch (command) {
-		case NOCOMMAND:
-			break;
-		case NEXTPANEL:
-		case PREVPANEL:
-			panelswitch(dsp, root, command == PREVPANEL ? -1 : 1);
-			raiselists(dsp,
-				&panelwindow, &confirmwindow, &progswindow);
-			break;
-		case RESTART:
-			restart = True;
-			/* fallthrough */
-		case QUIT:
-			if (! confirmquit && numpanels == 0)
-				run = False;
-			else {
-				showconfirm = True;
-				XMapWindow(dsp, confirmwindow.window);
-			}
-			break;
-
-		case PANELWINDOW:
-			showpanel = True;
-			XMapRaised(dsp, panelwindow.window);
-			showprogs = False;
-			XUnmapWindow(dsp, progswindow.window);
-			XGrabKeyboard(dsp, root, False,
-				GrabModeAsync, GrabModeAsync, CurrentTime);
-			break;
-		case PROGSWINDOW:
-			showprogs = True;
-			XMapRaised(dsp, progswindow.window);
-			showpanel = False;
-			XUnmapWindow(dsp, panelwindow.window);
-			XGrabKeyboard(dsp, root, False,
-				GrabModeAsync, GrabModeAsync, CurrentTime);
-			break;
-
-		case UPWINDOW:
-		case DOWNWINDOW:
-			if (showpanel) {
-				panelswitch(dsp, root,
-					command == UPWINDOW ? -1 : 1);
-				XClearArea(dsp, panelwindow.window,
-					0, 0, 0, 0, True);
-				XRaiseWindow(dsp, panelwindow.window);
-			}
-			if (showprogs) {
-				MODULEINCREASE(progselected, numprograms,
-					(command == UPWINDOW ? -1 : 1));
-				XClearArea(dsp, progswindow.window,
-					0, 0, 0, 0, True);
-			}
-			if (showconfirm) {
-				MODULEINCREASE(confirmselected, 2,
-					(command == UPWINDOW ? -1 : 1));
-				XClearArea(dsp, confirmwindow.window,
-					0, 0, 0, 0, True);
-			}
-			break;
-		case HIDEWINDOW:
-		case OKWINDOW:
-			if (showpanel) {
-				showpanel = False;
-				XUnmapWindow(dsp, panelwindow.window);
-				XUngrabKeyboard(dsp, CurrentTime);
-			}
-			else if (showprogs) {
-				showprogs = False;
-				XUnmapWindow(dsp, progswindow.window);
-				XUngrabKeyboard(dsp, CurrentTime);
-				if (command == HIDEWINDOW)
-					break;
-				p = programs[progselected].program;
-				t = programs[progselected].title;
-				if (p)
-					forkprogram(p, NULL);
-				else if (! strcmp(t, "resize"))
-					panelresize(dsp, activepanel, rwa);
-				else if (! strcmp(t, "restart")) {
-					run = False;
-					restart = True;
+			if (NUMWINDOW(1) <= command) {
+				if (showpanel) {
+					if (activepanel == -1)
+						continue;
+					j = 0;
+					for (i = 0; i < activepanel; i++)
+						if (! panel[i].withdrawn)
+							j++;
+					panelswitch(dsp, root,
+						command - NUMWINDOW(1) - j);
+					XClearArea(dsp, panelwindow.window,
+						0, 0, 0, 0, True);
+					XRaiseWindow(dsp, panelwindow.window);
 				}
-				else if (! strcmp(t, "quit")) {
-					if (! confirmquit || numpanels == 0) {
+				if (showprogs) {
+					progselected = command - NUMWINDOW(1);
+					printf("PROGSELECTED %d \"%s\"\n",
+						progselected,
+						programs[progselected].title);
+				}
+				command = OKWINDOW;
+			}
+
+						/* execute command */
+
+			switch (command) {
+			case NOCOMMAND:
+				break;
+			case NEXTPANEL:
+			case PREVPANEL:
+				panelswitch(dsp, root,
+					command == PREVPANEL ? -1 : 1);
+				raiselists(dsp,
+					&panelwindow,
+					&confirmwindow,
+					&progswindow);
+				break;
+			case RESTART:
+				restart = True;
+				/* fallthrough */
+			case QUIT:
+				if (! confirmquit || numpanels == 0) {
+					run = False;
+					break;
+				}
+				showconfirm = True;
+				confirmselected = 0;
+				XMapWindow(dsp, confirmwindow.window);
+				XGrabKeyboard(dsp, root, False,
+					GrabModeAsync, GrabModeAsync,
+					CurrentTime);
+				break;
+
+			case PANELWINDOW:
+				showpanel = True;
+				showprogs = False;
+				showconfirm = False;
+				break;
+			case PROGSWINDOW:
+				showprogs = True;
+				showpanel = False;
+				showconfirm = False;
+				break;
+			case CONFIRMWINDOW:
+				showconfirm = True;
+				showpanel = False;
+				showprogs = False;
+				break;
+
+			case UPWINDOW:
+			case DOWNWINDOW:
+				i = command == UPWINDOW ? -1 : 1;
+				if (showpanel) {
+					panelswitch(dsp, root, i);
+					XClearArea(dsp, panelwindow.window,
+						0, 0, 0, 0, True);
+					XRaiseWindow(dsp, panelwindow.window);
+				}
+				if (showprogs) {
+					MODULEINCREASE(progselected,
+						numprograms, i);
+					XClearArea(dsp, progswindow.window,
+						0, 0, 0, 0, True);
+				}
+				if (showconfirm) {
+					MODULEINCREASE(confirmselected, 2, i);
+					XClearArea(dsp, confirmwindow.window,
+						0, 0, 0, 0, True);
+				}
+				break;
+			case HIDEWINDOW:
+			case OKWINDOW:
+				if (showpanel) {
+					showpanel = False;
+					XUnmapWindow(dsp, panelwindow.window);
+					XUngrabKeyboard(dsp, CurrentTime);
+				}
+				else if (showprogs) {
+					showprogs = False;
+					XUnmapWindow(dsp, progswindow.window);
+					XUngrabKeyboard(dsp, CurrentTime);
+					if (command == HIDEWINDOW)
+						break;
+					p = programs[progselected].program;
+					t = programs[progselected].title;
+					if (p)
+						forkprogram(p, NULL);
+					else if (! strcmp(t, "resize")) {
+						command = RESIZE;
+						continue;
+					}
+					else if (! strcmp(t, "loglist")) {
+						command = LOGLIST;
+						continue;
+					}
+					else if (! strcmp(t, "positionfix")) {
+						command = POSITIONFIX;
+						continue;
+					}
+					else if (! strcmp(t, "restart")) {
+						command = RESTART;
+						continue;
+					}
+					else if (! strcmp(t, "quit")) {
+						command = QUIT;
+						continue;
+					}
+				}
+				else if (showconfirm) {
+					showconfirm = False;
+					XUngrabKeyboard(dsp, CurrentTime);
+					XUnmapWindow(dsp,
+						confirmwindow.window);
+					if (command == HIDEWINDOW)
+						break;
+					if (confirmselected == 0) {
 						run = False;
 						break;
 					}
-					showconfirm = True;
-					confirmselected = 0;
-					XMapWindow(dsp, confirmwindow.window);
-					XGrabKeyboard(dsp, root, False,
-						GrabModeAsync, GrabModeAsync,
-						CurrentTime);
-					XUnmapWindow(dsp, panelwindow.window);
-					XUnmapWindow(dsp, progswindow.window);
+					showconfirm = False;
 				}
+				break;
+			case KOWINDOW:
+				if (showpanel && activepanel != -1)
+					closewindow(dsp,
+						panel[activepanel].content);
+				break;
+			case ENDWINDOW:
+				if (showpanel &&
+				    activepanel != -1 &&
+				    activepanel < numpanels - 1) {
+					for (i = activepanel;
+					     i < numpanels - 1;
+					     i++)
+						panelswap(i, i + 1);
+					activepanel = numpanels - 1;
+					XClearArea(dsp, panelwindow.window,
+						0, 0, 0, 0, True);
+					XRaiseWindow(dsp, panelwindow.window);
+				}
+				break;
+
+			case RESIZE:
+				panelresize(dsp, activepanel, rwa);
+				break;
+			case LOGLIST:
+				for (pn = 0; pn < numpanels; pn++)
+					panelprint("LOG", pn);
+				for (i = 0; i < numoverride; i++)
+					overrideprint("LOG", i);
+				break;
+			case POSITIONFIX:
+				overridefix = ! overridefix;
+				printf("OVERRIDEFIX %d\n", overridefix);
+				break;
 			}
-			else if (showconfirm) {
-				showconfirm = False;
-				XUngrabKeyboard(dsp, CurrentTime);
+
+						/* show/remove lists */
+
+			if (showpanel)
+				XMapWindow(dsp, panelwindow.window);
+			else
+				XUnmapWindow(dsp, panelwindow.window);
+			if (showprogs)
+				XMapWindow(dsp, progswindow.window);
+			else
+				XUnmapWindow(dsp, progswindow.window);
+			if (showconfirm)
+				XMapWindow(dsp, confirmwindow.window);
+			else
 				XUnmapWindow(dsp, confirmwindow.window);
-				if (command == HIDEWINDOW)
-					break;
-				if (confirmselected == 0) {
-					run = False;
-					break;
-				}
-				showconfirm = False;
-			}
-			break;
-		case KOWINDOW:
-			if (showpanel && activepanel != -1)
-				closewindow(dsp, panel[activepanel].content);
-			break;
-		case ENDWINDOW:
-			if (showpanel &&
-			    activepanel != -1 &&
-			    activepanel < numpanels - 1) {
-				for (i = activepanel; i < numpanels - 1; i++)
-					panelswap(i, i + 1);
-				activepanel = numpanels - 1;
-				XClearArea(dsp, panelwindow.window,
-					0, 0, 0, 0, True);
-				XRaiseWindow(dsp, panelwindow.window);
-			}
-			break;
+			if (showpanel || showprogs || showconfirm)
+				XGrabKeyboard(dsp, root, False,
+					GrabModeAsync, GrabModeAsync,
+					CurrentTime);
 
-		case LOGLIST:
-			for (pn = 0; pn < numpanels; pn++)
-				panelprint("LOG", pn);
-			for (i = 0; i < numoverride; i++)
-				overrideprint("LOG", i);
-			break;
-		case POSITIONFIX:
-			overridefix = ! overridefix;
-			printf("OVERRIDEFIX %d\n", overridefix);
-			break;
+			fflush(NULL);
+			command = NOCOMMAND;
 		}
-
-		fflush(NULL);
 	}
 
 				/* close wm */

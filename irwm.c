@@ -260,11 +260,11 @@ int eventtocommand(Display *dsp, XKeyEvent e, KeySym *list) {
 		    && e.state == commandstring[i].modifier)
 			return commandstring[i].command;
 	if (list == NULL)
-		return -1;
+		return NOCOMMAND;
 	for (list = list, i = 0; *list != XK_VoidSymbol; list++, i++)
 		if (e.keycode == XKeysymToKeycode(dsp, *list))
 			return NUMWINDOW(i + 1);
-	return -1;
+	return NOCOMMAND;
 }
 
 /*
@@ -1723,8 +1723,6 @@ int main(int argn, char *argv[]) {
 
 			command = eventtocommand(dsp, ekey,
 					showprogs ? shortcuts : NULL);
-			if (command == -1)
-				command = NOCOMMAND;
 			break;
 		case KeyRelease:
 			printf("KeyRelease\n");

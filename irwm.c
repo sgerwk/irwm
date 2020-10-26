@@ -21,7 +21,6 @@
  * 			in lists: up/down/return/escape
  *			only in panel list: c = close panel
  *   ctrl-shift-l	print panels in the log file
- *   ctrl-shift-p	toggle fixing the position of the override window
  *   ctrl-shift-tab	quit
  *
  * lirc, or ClientMessage of message_type "IRWM" to the root window:
@@ -208,11 +207,11 @@ struct {
 	{RESTART,	"RESTART", XK_Tab, ControlMask | ShiftMask | Mod1Mask},
 	{QUIT,		"QUIT",		XK_Tab,	ControlMask | ShiftMask},
 	{LOGLIST,	"LOGLIST",	XK_l,	ControlMask | ShiftMask},
-	{POSITIONFIX,	"POSITIONFIX",	XK_p,	ControlMask | ShiftMask},
 	{PANELWINDOW,	"PANELWINDOW",	XK_Tab,		Mod1Mask},
 	{PROGSWINDOW,	"PROGSWINDOW",	XK_Tab,		ControlMask},
 	{-1,		"ENDGRAB",	XK_VoidSymbol,	0},
 	{RESIZE,	"RESIZE",	XK_VoidSymbol,  0},
+	{POSITIONFIX,	"POSITIONFIX",	XK_VoidSymbol,	0},
 	{CONFIRMWINDOW, "CONFIRMWINDOW", XK_VoidSymbol, 0},
 	{UPWINDOW,	"UPWINDOW",	XK_Up,		0},
 	{DOWNWINDOW,	"DOWNWINDOW",	XK_Down,	0},

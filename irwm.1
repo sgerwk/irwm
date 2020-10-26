@@ -321,23 +321,25 @@ are translated to commands, by a process forked by irwm at startup. The command
 numbers are:
 
 .nf
-#define NOCOMMAND    0		/* no command */
-#define NEXTPANEL    1		/* switch to next window */
-#define PREVPANEL    2		/* switch to previous window */
-#define RESTART      3		/* restart irwm */
-#define QUIT         4		/* quit irwm */
-#define LOGLIST      5		/* print panels in the log file */
-#define POSITIONFIX  6		/* toggle: fix position of override windows */
+#define NOCOMMAND      0	/* no command */
+#define NEXTPANEL      1	/* switch to next window */
+#define PREVPANEL      2	/* switch to previous window */
+#define RESTART        3	/* restart irwm */
+#define QUIT           4	/* quit irwm */
+#define LOGLIST        5	/* print panels in the log file */
+#define POSITIONFIX    6	/* toggle: fix position of override windows */
+#define RESIZE         7	/* resize the current panel */
 
-#define PANELWINDOW 10		/* show the window list */
-#define PROGSWINDOW 11		/* show the program list */
+#define PANELWINDOW   10	/* show the window list */
+#define PROGSWINDOW   11	/* show the program list */
+#define CONFIRMWINDOW 12	/* show the quit confirm dialog */
 
-#define UPWINDOW    20		/* up in the window */
-#define DOWNWINDOW  21		/* down in the window */
-#define HIDEWINDOW  22		/* hide both windows */
-#define OKWINDOW    23		/* select the current item in the window */
-#define KOWINDOW    24		/* close currently selected panel */
-#define ENDWINDOW   25		/* move currently active panel at the end */
+#define UPWINDOW      20	/* up in the window */
+#define DOWNWINDOW    21	/* down in the window */
+#define HIDEWINDOW    22	/* hide both windows */
+#define OKWINDOW      23	/* select the current item in the window */
+#define KOWINDOW      24	/* close currently selected panel */
+#define ENDWINDOW     25	/* move currently active panel at the end */
 
 #define NUMWINDOW(n) (100 + (n))	/* select entry n in the list */
 .fi

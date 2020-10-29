@@ -807,7 +807,7 @@ void panelenter(Display *dsp, Window root) {
 	activecontent = panel[activepanel].content;
 	printf("ACTIVECONTENT 0x%lx\n", activecontent);
 	activewindow = panel[activepanel].content;
-	printf("ACTIVEWINDOW 0x%lx\n", activecontent);
+	printf("ACTIVEWINDOW 0x%lx\n", activewindow);
 	clientlistupdate(dsp, root);
 
 	XMapWindow(dsp, panel[activepanel].content);

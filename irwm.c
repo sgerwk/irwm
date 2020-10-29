@@ -277,9 +277,9 @@ int eventtocommand(Display *dsp, XKeyEvent e, KeySym *list) {
 /*
  * ICCCM atoms
  */
-Atom wm_state, wm_protocols, wm_delete_window;
-Atom net_client_list, net_client_list_stacking;
-Atom net_active_window;
+Atom wm_protocols, wm_state, wm_delete_window;
+Atom net_supported;
+Atom net_client_list, net_client_list_stacking, net_active_window;
 
 /*
  * error handler
@@ -1096,6 +1096,8 @@ int main(int argn, char *argv[]) {
 	XWindowChanges wc;
 	int listwidth, listheight;
 	Atom irwm, net_wm_state, net_wm_state_stays_on_top;
+	Atom supported[100];
+	int nsupported = 0;
 	int pn;
 	char *message;
 	int i, j, c, w;
@@ -1403,6 +1405,7 @@ int main(int argn, char *argv[]) {
 	wm_state = XInternAtom(dsp, "WM_STATE", False);
 	wm_protocols = XInternAtom(dsp, "WM_PROTOCOLS", False);
 	wm_delete_window = XInternAtom(dsp, "WM_DELETE_WINDOW", False);
+	net_supported = XInternAtom(dsp, "_NET_PROTOCOLS", False);
 	net_wm_state = XInternAtom(dsp, "_NET_WM_STATE", False);
 	net_wm_state_stays_on_top =
 		XInternAtom(dsp, "_NET_WM_STATE_STAYS_ON_TOP", False);
@@ -1410,6 +1413,14 @@ int main(int argn, char *argv[]) {
 	net_client_list = XInternAtom(dsp, "_NET_CLIENT_LIST", False);
 	net_client_list_stacking =
 		XInternAtom(dsp, "_NET_CLIENT_LIST_STACKING", False);
+
+	supported[nsupported++] = net_wm_state;
+	supported[nsupported++] = net_wm_state_stays_on_top;
+	supported[nsupported++] = net_active_window;
+	supported[nsupported++] = net_client_list;
+	supported[nsupported++] = net_client_list_stacking; // max 100
+	XChangeProperty(dsp, root, net_supported, XA_ATOM, 32,
+		PropModeReplace, (unsigned char *) supported, nsupported);
 
 	clientlistupdate(dsp, root);
 

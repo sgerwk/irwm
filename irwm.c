@@ -1693,11 +1693,23 @@ int main(int argn, char *argv[]) {
 
 			if (emessage.message_type == net_active_window &&
 			    emessage.format == 32) {
-				XRaiseWindow(dsp, emessage.window);
 				activewindow = emessage.window;
 				printf("ACTIVEWINDOW 0x%lx\n", activewindow);
-				clientlistupdate(dsp, root);
-				overrideraise(dsp);
+				pn = panelfind(activewindow, CONTENT);
+				if (pn != -1) {
+					panelleave(dsp);
+					activepanel = pn;
+					panelenter(dsp, root);
+				}
+				else {
+					XMapWindow(dsp, activewindow);
+					XSetInputFocus(dsp, activewindow,
+						RevertToParent, CurrentTime);
+					clientlistupdate(dsp, root);
+					overrideraise(dsp);
+				}
+				raiselists(dsp, &panelwindow, &confirmwindow,
+					&progswindow);
 			}
 
 			if (emessage.message_type == net_wm_state &&

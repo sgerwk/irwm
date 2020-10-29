@@ -421,7 +421,7 @@ struct {
 	Bool ontop;
 } override[MAXOVERRIDE];
 int numoverride = 0;
-Bool raiseoverride = True;
+Bool raiseoverride = False;
 #define UNMOVED (-10000)
 
 /*
@@ -549,6 +549,7 @@ int activepanel = -1;
 Window activecontent = None;
 Bool unmaponleave = False;	/* unmap window when switching to another */
 Window activewindow = None;	/* may not be the content of a panel */
+Window panelroof;		/* all panels under the same roof */
 
 /*
  * print data of a panel
@@ -777,6 +778,7 @@ void clientlistupdate(Display *dsp, Window root) {
  */
 void panelenter(Display *dsp, Window root) {
 	long data[2];
+	XWindowChanges wc;
 
 	if (activepanel == -1) {
 		activecontent = None;
@@ -812,7 +814,11 @@ void panelenter(Display *dsp, Window root) {
 
 	XMapWindow(dsp, panel[activepanel].content);
 	XMapWindow(dsp, panel[activepanel].panel);
-	XRaiseWindow(dsp, panel[activepanel].panel);
+
+	wc.sibling = panelroof;
+	wc.stack_mode = Below;
+	XConfigureWindow(dsp, panel[activepanel].panel,
+		CWSibling | CWStackMode, &wc);
 	overrideraise(dsp);
 
 	data[0] = NormalState;
@@ -1340,6 +1346,11 @@ int main(int argn, char *argv[]) {
 	listwidth = rwa.width / 4;
 	listheight = 16 * (font->ascent + font->descent + PADDING * 2) +
 		PADDING * 2 * 2 + MARGIN * 2;
+
+				/* the panel roof */
+
+	panelroof = XCreateSimpleWindow(dsp, root, 0, 0, 1, 1, 0,
+		BlackPixel(dsp, 0), WhitePixel(dsp, 0));
 
 				/* panel list window */
 

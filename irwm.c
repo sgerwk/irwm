@@ -98,7 +98,9 @@
  *
  * windows with the override_redirect flag usually stay over the regular
  * windows; irwm does not reparent them to a panel, but keeps a list of them
- * and raises them every time it enters a panel
+ *
+ * if the raiseoverride variable is true, irwm raises all such windows every
+ * time it enters a panel; this is currently disabled
  *
  * a typical use of override windows is to implement menus; programs often
  * misplace them too close to the screen border, where parts of them fall

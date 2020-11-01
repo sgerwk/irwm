@@ -1145,7 +1145,7 @@ int main(int argn, char *argv[]) {
 	Bool tran;
 	KeySym shortcuts[100];
 
-	Bool uselirc = False, singlekey = False;
+	Bool startprogs = True, uselirc = False, singlekey = False;
 	Bool overridefix = False;
 	Bool quitonlastclose = False, confirmquit = False;
 	Bool run, restart;
@@ -1175,6 +1175,8 @@ int main(int argn, char *argv[]) {
 			quitonlastclose = True;
 		else if (! strcmp(argv[1], "-c"))
 			confirmquit = True;
+		else if (! strcmp(argv[1], "-n"))
+			startprogs = False;
 		else if (! strcmp(argv[1], "-s"))
 			singlekey = True;
 		else if (! strcmp(argv[1], "-u"))
@@ -1239,6 +1241,7 @@ int main(int argn, char *argv[]) {
 			printf("\t-l\t\t\tuse lirc for input\n");
 			printf("\t-q\t\t\tquit when all windows are closed\n");
 			printf("\t-c\t\t\tconfirm quit if a window is open\n");
+			printf("\t-n\t\t\tdo not start programs in .irwmrc\n");
 			printf("\t-r\t\t\tswitch to window by raising it\n");
 			printf("\t-u\t\t\tswitch by unmapping previous\n");
 			printf("\t-display display\tconnect to server\n");
@@ -1297,8 +1300,12 @@ int main(int argn, char *argv[]) {
 			}
 			else if (1 == sscanf(line, "logfile %s", s1))
 				logfile = strdup(s1);
-			else if (1 == sscanf(line, "startup %s", s1))
-				forkprogram(s1, NULL);
+			else if (1 == sscanf(line, "startup %s", s1)) {
+				if (startprogs)
+					forkprogram(s1, NULL);
+				else
+					printf("ignored (-n): %s", line);
+			}
 			else if (2 == sscanf(line, "program %s %s", s1, s2)) {
 				programs[numprograms].title = strdup(s1);
 				programs[numprograms].program = strdup(s2);

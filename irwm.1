@@ -116,8 +116,9 @@ close all windows and restart irwm
 .I
 RETIRE
 quit irwm without closing the windows;
-if no window is currently open, run xterm(1);
-this command is intended to let another window manager to take over
+if no window is currently open, run \fBxterm(1)\fP;
+this command is intended to let another window manager take over;
+it may require the \fIstickaround\fP configuration file option to work
 .TP
 .I
 QUIT
@@ -205,6 +206,7 @@ On startup, irwm reads \fI$HOME/.irwmrc\fP and, if this file does not exists,
 
     quitonlastclose
     confirmquit
+    stickaround
 
     echo end of configuration file
 .fi
@@ -230,6 +232,12 @@ The lines "\fIquitonlastclose\fP" and "\fIconfirmquit\fP" are respectively
 equivalent to the commandline options \fI-q\fP and \fI-c\fP: close the window
 manager when the last window is closed and ask for confirmation when quitting
 unless all windows are already closed.
+
+The line "\fIstickaround\fP" makes the window manager disconnect from the X
+server but not terminate on retiring. This may ne necessary to make retiring
+work as expected. If irwm is started by \fIstartx\fP, its termination would
+quit the X server as well. This option lets it stick around while another
+window manager takes over. The X server only terminates when irwm is killed.
 
 The "\fIecho ...\fP" line has the usual meaning.
 

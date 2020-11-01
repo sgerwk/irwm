@@ -1152,7 +1152,7 @@ int main(int argn, char *argv[]) {
 	Bool startprogs = True, uselirc = False, singlekey = False;
 	Bool overridefix = False;
 	Bool quitonlastclose = False, confirmquit = False;
-	Bool run, restart, retire;
+	Bool run, restart, retire, stickaround = False;
 	int command;
 	Bool showpanel = False, showprogs = False, showconfirm = False;
 	int progselected = 0, confirmselected = 0;
@@ -1306,6 +1306,9 @@ int main(int argn, char *argv[]) {
 			}
 			else if (1 == sscanf(line, "logfile %s", s1))
 				logfile = strdup(s1);
+			if (1 == sscanf(line, "%s", s1) &&
+			    ! strcmp(s1, "stickaround"))
+				stickaround = True;
 			else if (1 == sscanf(line, "startup %s", s1)) {
 				if (startprogs)
 					forkprogram(s1, NULL);
@@ -2124,8 +2127,11 @@ int main(int argn, char *argv[]) {
 		execvp(cargv[0], cargv);
 		perror(cargv[0]);
 	}
-	printf("irwm ended\n");
+	if (retire && stickaround)
+		while (1) {
+		}
 
+	printf("irwm ended\n");
 	return EXIT_SUCCESS;
 }
 

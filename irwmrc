@@ -33,6 +33,7 @@ logfile /run/user/1000/irwm.log
 
 confirmquit
 # quitonlastclose
+stickaround
 
 echo end of configuration file
 

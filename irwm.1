@@ -114,6 +114,12 @@ RESTART
 close all windows and restart irwm
 .TP
 .I
+RETIRE
+quit irwm without closing the windows;
+if no window is currently open, run xterm(1);
+this command is intended to let another window manager to take over
+.TP
+.I
 QUIT
 (Control-Shift-Tab)
 close irwm
@@ -326,13 +332,14 @@ numbers are:
 
 .nf
 #define NOCOMMAND      0	/* no command */
-#define NEXTPANEL      1	/* switch to next window */
-#define PREVPANEL      2	/* switch to previous window */
+#define NEXTPANEL      1	/* switch to next panel */
+#define PREVPANEL      2	/* switch to previous panel */
 #define RESTART        3	/* restart irwm */
-#define QUIT           4	/* quit irwm */
-#define LOGLIST        5	/* print panels in the log file */
-#define POSITIONFIX    6	/* toggle: fix position of override windows */
-#define RESIZE         7	/* resize the current panel */
+#define RETIRE         4	/* retire irwm */
+#define QUIT           5	/* quit irwm */
+#define LOGLIST        6	/* print panels in the log file */
+#define POSITIONFIX    7	/* toggle: fix position of override windows */
+#define RESIZE         8	/* resize the current panel */
 
 #define PANELWINDOW   10	/* show the window list */
 #define PROGSWINDOW   11	/* show the program list */

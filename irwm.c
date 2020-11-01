@@ -29,6 +29,7 @@
  *   NEXTPANEL		switch to next panel
  *   PREVPANEL		switch to previous panel
  *   RESTART		restart irwm
+ *   RETIRE		quit irwm without quitting X
  *   QUIT		quit irwm
  *   LOGLIST		print the list of panels in the log file
  *   POSITIONFIX	toggle fixing the position of override windows
@@ -179,10 +180,11 @@
 #define NEXTPANEL      1	/* switch to next panel */
 #define PREVPANEL      2	/* switch to previous panel */
 #define RESTART        3	/* restart irwm */
-#define QUIT           4	/* quit irwm */
-#define LOGLIST        5	/* print panels in the log file */
-#define POSITIONFIX    6	/* toggle: fix position of override windows */
-#define RESIZE         7	/* resize the current panel */
+#define RETIRE         4	/* retire irwm */
+#define QUIT           5	/* quit irwm */
+#define LOGLIST        6	/* print panels in the log file */
+#define POSITIONFIX    7	/* toggle: fix position of override windows */
+#define RESIZE         8	/* resize the current panel */
 
 #define PANELWINDOW   10	/* show the panel list window */
 #define PROGSWINDOW   11	/* show the programs window */
@@ -212,6 +214,7 @@ struct {
 	{PANELWINDOW,	"PANELWINDOW",	XK_Tab,		Mod1Mask},
 	{PROGSWINDOW,	"PROGSWINDOW",	XK_Tab,		ControlMask},
 	{-1,		"ENDGRAB",	XK_VoidSymbol,	0},
+	{RETIRE,	"RETIRE", 	XK_VoidSymbol,  0},
 	{RESIZE,	"RESIZE",	XK_VoidSymbol,  0},
 	{POSITIONFIX,	"POSITIONFIX",	XK_VoidSymbol,	0},
 	{CONFIRMWINDOW, "CONFIRMWINDOW", XK_VoidSymbol, 0},
@@ -1113,6 +1116,7 @@ void capturetop(Display *dsp, Window root) {
  */
 int main(int argn, char *argv[]) {
 	char **cargv;
+	int cargn;
 	char *logfile = "irwm.log";
 	int lf;
 
@@ -1148,7 +1152,7 @@ int main(int argn, char *argv[]) {
 	Bool startprogs = True, uselirc = False, singlekey = False;
 	Bool overridefix = False;
 	Bool quitonlastclose = False, confirmquit = False;
-	Bool run, restart;
+	Bool run, restart, retire;
 	int command;
 	Bool showpanel = False, showprogs = False, showconfirm = False;
 	int progselected = 0, confirmselected = 0;
@@ -1167,7 +1171,9 @@ int main(int argn, char *argv[]) {
 
 				/* parse options */
 
-	cargv = argv;
+	cargv = malloc((argn + 2) * sizeof(char *));
+	memcpy(cargv, argv, argn * sizeof(char *));
+	cargn = argn + 1;
 	while (argn - 1 > 0 && argv[1][0] == '-') {
 		if (! strcmp(argv[1], "-l"))
 			uselirc = True;
@@ -1925,7 +1931,9 @@ int main(int argn, char *argv[]) {
 					&progswindow);
 				break;
 			case RESTART:
-				restart = True;
+			case RETIRE:
+				retire = True;
+				restart = command == RESTART;
 				/* fallthrough */
 			case QUIT:
 				if (! confirmquit || numpanels == 0) {
@@ -2008,6 +2016,10 @@ int main(int argn, char *argv[]) {
 					}
 					else if (! strcmp(t, "restart")) {
 						command = RESTART;
+						continue;
+					}
+					else if (! strcmp(t, "retire")) {
+						command = RETIRE;
 						continue;
 					}
 					else if (! strcmp(t, "quit")) {
@@ -2097,9 +2109,17 @@ int main(int argn, char *argv[]) {
 		kill(lircclient, SIGTERM);
 	}
 	for (i = 0; i < numpanels; i++)
-		closewindow(dsp, panel[i].content);
+		if (restart || retire)
+			XReparentWindow(dsp, panel[i].content, root, 0, 0);
+		else
+			closewindow(dsp, panel[i].content);
+	XSetInputFocus(dsp, root, RevertToNone, CurrentTime);
 	XCloseDisplay(dsp);
+	if (retire && numpanels == 0)
+		forkprogram("xterm", NULL);
 	if (restart) {
+		cargv[cargn - 1] = startprogs ? "-n" : NULL;
+		cargv[cargn] = NULL;
 		printf("irwm restart\n");
 		execvp(cargv[0], cargv);
 		perror(cargv[0]);

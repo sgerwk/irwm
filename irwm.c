@@ -455,6 +455,8 @@ void overrideadd(Window win) {
 		printf("WARNING: too many override_redirect windows\n");
 		return;
 	}
+	if (overrideexists(win) != -1)
+		return;
 	override[numoverride].win = win;
 	override[numoverride].nx = UNMOVED;
 	override[numoverride].ny = UNMOVED;

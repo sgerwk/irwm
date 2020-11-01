@@ -1078,6 +1078,37 @@ void closewindow(Display *dsp, Window win) {
 }
 
 /*
+ * capture existing windows
+ */
+void capturetop(Display *dsp, Window root) {
+	Window rr, pr, *top;
+	unsigned int ntop, i;
+	XWindowAttributes wa;
+	XMapRequestEvent mr;
+	XCreateWindowEvent cw;
+	unsigned long msk = SubstructureRedirectMask | SubstructureNotifyMask;
+
+	XQueryTree(dsp, root, &rr, &pr, &top, &ntop);
+	for (i = 0; i < ntop; i++) {
+		XGetWindowAttributes(dsp, top[i], &wa);
+		if (wa.override_redirect) {
+			printf("CAPTURE OVERRIDE 0x%lx\n", top[i]);
+			cw.type = CreateNotify;
+			cw.window = top[i];
+			cw.parent = root;
+			cw.override_redirect = True;
+			XSendEvent(dsp, root, False, msk, (XEvent *) &cw);
+		}
+		else if (wa.map_state != IsUnmapped) {
+			printf("CAPTURE 0x%lx\n", top[i]);
+			mr.type = MapRequest;
+			mr.window = top[i];
+			XSendEvent(dsp, root, False, msk, (XEvent *) &mr);
+		}
+	}
+}
+
+/*
  * main
  */
 int main(int argn, char *argv[]) {
@@ -1334,6 +1365,10 @@ int main(int argn, char *argv[]) {
 		SubstructureRedirectMask |
 		SubstructureNotifyMask |
 		KeyPressMask);
+
+				/* capture existing windows */
+
+	capturetop(dsp, root);
 
 				/* graphic context, font and list size */
 

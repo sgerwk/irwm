@@ -1306,8 +1306,11 @@ int main(int argn, char *argv[]) {
 			}
 			else if (1 == sscanf(line, "logfile %s", s1))
 				logfile = strdup(s1);
-			if (1 == sscanf(line, "%s", s1) &&
-			    ! strcmp(s1, "stickaround"))
+			else if (1 == sscanf(line, "%s", s1) &&
+			         ! strcmp(s1, "unmaponleave"))
+				unmaponleave = True;
+			else if (1 == sscanf(line, "%s", s1) &&
+			         ! strcmp(s1, "stickaround"))
 				stickaround = True;
 			else if (1 == sscanf(line, "startup %s", s1)) {
 				if (startprogs)

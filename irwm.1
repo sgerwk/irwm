@@ -207,6 +207,7 @@ On startup, irwm reads \fI$HOME/.irwmrc\fP and, if this file does not exists,
     quitonlastclose
     confirmquit
     stickaround
+    # unmaponleave
 
     echo end of configuration file
 .fi
@@ -238,6 +239,10 @@ server but not terminate on retiring. This may ne necessary to make retiring
 work as expected. If irwm is started by \fIstartx\fP, its termination would
 quit the X server as well. This option lets it stick around while another
 window manager takes over. The X server only terminates when irwm is killed.
+
+The line "\fIunmaponleave\fP" would switch from the normal raise mode to unmap
+mode (see INTERNALS, below) if uncommented. It is equivalent to the \fI-u\fP
+commandline option.
 
 The "\fIecho ...\fP" line has the usual meaning.
 

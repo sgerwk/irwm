@@ -1551,8 +1551,7 @@ int main(int argn, char *argv[]) {
 			if (pn == -1)
 				break;
 
-			if (activepanel != -1)
-				panelleave(dsp);
+			panelleave(dsp);
 			activepanel = pn;
 			panelresize(dsp, pn, rwa);
 			panelenter(dsp, root);

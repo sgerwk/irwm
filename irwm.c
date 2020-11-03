@@ -702,7 +702,7 @@ int panelremove(Display *dsp, int pn, int destroy) {
 	if (numactive == 0)
 		activepanel = -1;
 
-	return 0;
+	return activepanel;
 }
 
 /*
@@ -726,7 +726,7 @@ int panelswap(int pn1, int pn2) {
 /*
  * resize a panel
  */
-void panelresize(Display *dsp, int pn, XWindowAttributes base) {
+void panelresize(Display *dsp, XWindowAttributes base, int pn) {
 	if (pn == -1)
 		return;
 	panelprint("RESIZE", pn);
@@ -781,59 +781,64 @@ void clientlistupdate(Display *dsp, Window root) {
 }
 
 /*
- * enter the current panel
+ * enter panel
  */
-void panelenter(Display *dsp, Window root) {
+void panelenter(Display *dsp, Window root, int pn) {
 	long data[2];
 	XWindowChanges wc;
 
-	if (activepanel == -1) {
+	if (pn == -1) {
 		activecontent = None;
 		printf("ACTIVECONTENT 0x%lx\n", activecontent);
 		clientlistupdate(dsp, root);
+		panelleave(dsp);
+		activepanel = pn;
 		return;
 	}
 
-	panelprint("ENTER", activepanel);
+	panelprint("ENTER", pn);
 
-	if (activepanel >= numpanels) {
+	if (pn >= numpanels) {
 		printf("WARNING: activepanel=%d not less than numpanels=%d\n",
 			activepanel, numpanels);
 		return;
 	}
 
-	if (panel[activepanel].withdrawn) {
+	if (panel[pn].withdrawn) {
 		panelprint("RESTORE", activepanel);
-		panel[activepanel].withdrawn = False;
+		panel[pn].withdrawn = False;
 		numactive++;
 	}
 
-	if (activecontent == panel[activepanel].content) {
+	if (activecontent == panel[pn].content) {
 		printf("NOTE: active content already active\n");
 		return;
 	}
 
-	activecontent = panel[activepanel].content;
+	activecontent = panel[pn].content;
 	printf("ACTIVECONTENT 0x%lx\n", activecontent);
-	activewindow = panel[activepanel].content;
+	activewindow = panel[pn].content;
 	printf("ACTIVEWINDOW 0x%lx\n", activewindow);
 	clientlistupdate(dsp, root);
 
-	XMapWindow(dsp, panel[activepanel].content);
-	XMapWindow(dsp, panel[activepanel].panel);
-
 	wc.sibling = panelroof;
 	wc.stack_mode = Below;
-	XConfigureWindow(dsp, panel[activepanel].panel,
+	XConfigureWindow(dsp, panel[pn].panel,
 		CWSibling | CWStackMode, &wc);
 	overrideraise(dsp);
 
+	XMapWindow(dsp, panel[pn].content);
+	XMapWindow(dsp, panel[pn].panel);
+
+	panelleave(dsp);
+	activepanel = pn;
+
 	data[0] = NormalState;
 	data[1] = None;
-	XChangeProperty(dsp, panel[activepanel].content, wm_state, wm_state,
+	XChangeProperty(dsp, panel[pn].content, wm_state, wm_state,
 		32, PropModeReplace, (unsigned char *) data, 2);
 
-	XSetInputFocus(dsp, panel[activepanel].content,
+	XSetInputFocus(dsp, panel[pn].content,
 		RevertToParent, CurrentTime);
 }
 
@@ -841,13 +846,14 @@ void panelenter(Display *dsp, Window root) {
  * switch to next/previous panel
  */
 int panelswitch(Display *dsp, Window root, int rel) {
+	int pn;
 	if (activepanel == -1)
 		return -1;
-	panelleave(dsp);
+	pn = activepanel;
 	do {
-		MODULEINCREASE(activepanel, numpanels, rel);
-	} while (panel[activepanel].withdrawn);
-	panelenter(dsp, root);
+		MODULEINCREASE(pn, numpanels, rel);
+	} while (panel[pn].withdrawn);
+	panelenter(dsp, root, pn);
 	return 0;
 }
 
@@ -1552,10 +1558,8 @@ int main(int argn, char *argv[]) {
 			if (pn == -1)
 				break;
 
-			panelleave(dsp);
-			activepanel = pn;
-			panelresize(dsp, pn, rwa);
-			panelenter(dsp, root);
+			panelresize(dsp, rwa, pn);
+			panelenter(dsp, root, pn);
 			raiselists(dsp,
 				&panelwindow, &confirmwindow, &progswindow);
 			break;
@@ -1572,7 +1576,7 @@ int main(int argn, char *argv[]) {
 
 			pn = panelfind(erconfigure.window, PANEL | CONTENT);
 			if (pn != -1) {
-				panelresize(dsp, pn, rwa);
+				panelresize(dsp, rwa, pn);
 				break;
 			}
 
@@ -1633,17 +1637,17 @@ int main(int argn, char *argv[]) {
 			if (pn == -1)
 				break;
 
-			panelremove(dsp, pn, True);
+			pn = panelremove(dsp, pn, True);
+			activepanel = -1;
 
 			if (numactive > 0)
-				panelenter(dsp, root);
+				panelenter(dsp, root, pn);
 			else if (numpanels == 0 && quitonlastclose) {
 				printf("QUIT on last close\n");
 				run = False;
 				break;
 			}
 			else {
-				activepanel = -1;
 				clientlistupdate(dsp, root);
 				XSetInputFocus(dsp, root,
 					RevertToParent, CurrentTime);
@@ -1675,9 +1679,7 @@ int main(int argn, char *argv[]) {
 				overrideplace(dsp, evt.xunmap.window, &rwa);
 			if (pn == -1 || pn == activepanel)
 				break;
-			panelleave(dsp);
-			activepanel = pn;
-			panelenter(dsp, root);
+			panelenter(dsp, root, pn);
 			raiselists(dsp,
 				&panelwindow, &confirmwindow, &progswindow);
 
@@ -1695,15 +1697,15 @@ int main(int argn, char *argv[]) {
 			printf("\tcontent in panel %d\n", pn);
 
 			if (evt.xunmap.send_event) {
-				panelremove(dsp, pn, False);
+				pn = panelremove(dsp, pn, False);
+				activepanel = -1;
 				if (numactive > 0)
-					panelenter(dsp, root);
+					panelenter(dsp, root, pn);
 				else if (numpanels == 0 && quitonlastclose) {
 					run = False;
 					break;
 				}
 				else {
-					activepanel = -1;
 					clientlistupdate(dsp, root);
 					XSetInputFocus(dsp, root,
 						RevertToParent, CurrentTime);
@@ -1725,9 +1727,7 @@ int main(int argn, char *argv[]) {
 				break;
 
 			printf("\tswitching to panel %d\n", pn);
-			panelleave(dsp);
-			activepanel = pn;
-			panelenter(dsp, root);
+			panelenter(dsp, root, pn);
 			raiselists(dsp,
 				&panelwindow, &confirmwindow, &progswindow);
 
@@ -1766,11 +1766,8 @@ int main(int argn, char *argv[]) {
 				activewindow = emessage.window;
 				printf("ACTIVEWINDOW 0x%lx\n", activewindow);
 				pn = panelfind(activewindow, CONTENT);
-				if (pn != -1) {
-					panelleave(dsp);
-					activepanel = pn;
-					panelenter(dsp, root);
-				}
+				if (pn != -1)
+					panelenter(dsp, root, pn);
 				else {
 					XMapWindow(dsp, activewindow);
 					XSetInputFocus(dsp, activewindow,
@@ -2068,7 +2065,7 @@ int main(int argn, char *argv[]) {
 				break;
 
 			case RESIZE:
-				panelresize(dsp, activepanel, rwa);
+				panelresize(dsp, rwa, activepanel);
 				break;
 			case LOGLIST:
 				for (pn = 0; pn < numpanels; pn++)

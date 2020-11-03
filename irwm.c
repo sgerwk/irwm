@@ -812,6 +812,7 @@ void panelenter(Display *dsp, Window root, int pn) {
 
 	if (activecontent == panel[pn].content) {
 		printf("NOTE: active content already active\n");
+		activepanel = pn;
 		return;
 	}
 

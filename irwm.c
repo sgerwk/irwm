@@ -1409,6 +1409,7 @@ int main(int argn, char *argv[]) {
 
 	panelroof = XCreateSimpleWindow(dsp, root, 0, 0, 1, 1, 0,
 		BlackPixel(dsp, 0), WhitePixel(dsp, 0));
+	printf("panel roof: 0x%lx\n", panelroof);
 	XStoreName(dsp, panelroof, "irwm panel roof");
 
 				/* panel list window */

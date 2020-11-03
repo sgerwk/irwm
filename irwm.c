@@ -1150,7 +1150,7 @@ int main(int argn, char *argv[]) {
 	Atom irwm, net_wm_state, net_wm_state_stays_on_top;
 	Atom supported[100];
 	int nsupported = 0;
-	int pn;
+	int pn, npn;
 	char *message;
 	int i, j, c, w;
 	Bool tran;
@@ -1638,11 +1638,11 @@ int main(int argn, char *argv[]) {
 			if (pn == -1)
 				break;
 
-			pn = panelremove(dsp, pn, True);
+			npn = panelremove(dsp, pn, True);
 			activepanel = -1;
 
 			if (numactive > 0)
-				panelenter(dsp, root, pn);
+				panelenter(dsp, root, npn);
 			else if (numpanels == 0 && quitonlastclose) {
 				printf("QUIT on last close\n");
 				run = False;
@@ -1698,10 +1698,10 @@ int main(int argn, char *argv[]) {
 			printf("\tcontent in panel %d\n", pn);
 
 			if (evt.xunmap.send_event) {
-				pn = panelremove(dsp, pn, False);
+				npn = panelremove(dsp, pn, False);
 				activepanel = -1;
 				if (numactive > 0)
-					panelenter(dsp, root, pn);
+					panelenter(dsp, root, npn);
 				else if (numpanels == 0 && quitonlastclose) {
 					run = False;
 					break;

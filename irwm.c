@@ -1879,6 +1879,7 @@ int main(int argn, char *argv[]) {
 		default:
 			printf("Unexpected event, type=%d\n", evt.type);
 		}
+		fflush(stdout);
 
 					/* execute command */
 
@@ -2101,7 +2102,7 @@ int main(int argn, char *argv[]) {
 					GrabModeAsync, GrabModeAsync,
 					CurrentTime);
 
-			fflush(NULL);
+			fflush(stdout);
 			command = NOCOMMAND;
 		}
 	}

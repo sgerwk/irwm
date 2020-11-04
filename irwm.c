@@ -655,13 +655,13 @@ int paneladd(Display *dsp, Window root, Window win, XWindowAttributes *wa,
  */
 int panelremove(Display *dsp, int pn, int destroy) {
 	int i, j, n;
-	Window c;
+	Window content;
 
 	panelprint("REMOVE", pn);
 	if (pn < 0 || pn >= numpanels)
 		return -1;
-	c = panel[pn].content;
-	if (c == activecontent) {
+	content = panel[pn].content;
+	if (content == activecontent) {
 		activecontent = None;
 		printf("ACTIVECONTENT 0x%lx\n", activecontent);
 	}
@@ -669,7 +669,7 @@ int panelremove(Display *dsp, int pn, int destroy) {
 	j = 0;
 	n = numpanels;
 	for (i = 0; i < n; i++) {
-		if (i == pn || panel[i].leader == c) {
+		if (i == pn || panel[i].leader == content) {
 			if (! panel[i].withdrawn)
 				numactive--;
 			if (destroy) {

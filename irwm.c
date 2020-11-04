@@ -651,15 +651,33 @@ int paneladd(Display *dsp, Window root, Window win, XWindowAttributes *wa,
 }
 
 /*
+ * leave a panel
+ */
+void panelleave(Display *dsp, int pn) {
+	if (pn == -1)
+		return;
+
+	panelprint("LEAVE", pn);
+
+	if (! unmaponleave && ! panel[pn].withdrawn)
+		return;
+
+	XUnmapWindow(dsp, panel[pn].panel);
+	XUnmapWindow(dsp, panel[pn].content);
+
+	XDeleteProperty(dsp, panel[pn].content, wm_state);
+}
+
+/*
  * remove a panel
  */
-int panelremove(Display *dsp, int pn, int destroy) {
+void panelremove(Display *dsp, int pn, Bool destroy) {
 	int i, j, n;
 	Window content;
 
 	panelprint("REMOVE", pn);
 	if (pn < 0 || pn >= numpanels)
-		return -1;
+		return;
 	content = panel[pn].content;
 	if (content == activecontent) {
 		activecontent = None;
@@ -680,8 +698,8 @@ int panelremove(Display *dsp, int pn, int destroy) {
 			}
 			else if (! panel[i].withdrawn) {
 				panelprint("WITHDRAW", i);
-				XUnmapWindow(dsp, panel[i].panel);
 				panel[i].withdrawn = True;
+				panelleave(dsp, i);
 			}
 			if (activepanel == j && numactive > 0) {
 				do {
@@ -703,8 +721,6 @@ int panelremove(Display *dsp, int pn, int destroy) {
 
 	if (numactive == 0)
 		activepanel = -1;
-
-	return activepanel;
 }
 
 /*
@@ -738,24 +754,6 @@ void panelresize(Display *dsp, XWindowAttributes base, int pn) {
 }
 
 /*
- * leave the current panel
- */
-void panelleave(Display *dsp) {
-	if (activepanel == -1)
-		return;
-
-	panelprint("LEAVE", activepanel);
-
-	if (! unmaponleave)
-		return;
-
-	XUnmapWindow(dsp, panel[activepanel].panel);
-	XUnmapWindow(dsp, panel[activepanel].content);
-
-	XDeleteProperty(dsp, panel[activepanel].content, wm_state);
-}
-
-/*
  * update the lists of managed windows
  */
 void clientlistupdate(Display *dsp, Window root) {
@@ -783,18 +781,19 @@ void clientlistupdate(Display *dsp, Window root) {
 }
 
 /*
- * enter panel
+ * enter a panel
  */
-void panelenter(Display *dsp, Window root, int pn) {
+void panelenter(Display *dsp, Window root, int prevpn, int pn) {
 	long data[2];
 	XWindowChanges wc;
 
 	if (pn == -1) {
 		activecontent = None;
 		printf("ACTIVECONTENT 0x%lx\n", activecontent);
-		clientlistupdate(dsp, root);
-		panelleave(dsp);
+		panelleave(dsp, prevpn);
+		XSetInputFocus(dsp, root, RevertToParent, CurrentTime);
 		activepanel = pn;
+		clientlistupdate(dsp, root);
 		return;
 	}
 
@@ -815,14 +814,9 @@ void panelenter(Display *dsp, Window root, int pn) {
 	if (activecontent == panel[pn].content) {
 		printf("NOTE: active content already active\n");
 		activepanel = pn;
+		clientlistupdate(dsp, root);
 		return;
 	}
-
-	activecontent = panel[pn].content;
-	printf("ACTIVECONTENT 0x%lx\n", activecontent);
-	activewindow = panel[pn].content;
-	printf("ACTIVEWINDOW 0x%lx\n", activewindow);
-	clientlistupdate(dsp, root);
 
 	wc.sibling = panelroof;
 	wc.stack_mode = Below;
@@ -833,8 +827,14 @@ void panelenter(Display *dsp, Window root, int pn) {
 	XMapWindow(dsp, panel[pn].content);
 	XMapWindow(dsp, panel[pn].panel);
 
-	panelleave(dsp);
+	panelleave(dsp, prevpn);
 	activepanel = pn;
+
+	activecontent = panel[pn].content;
+	printf("ACTIVECONTENT 0x%lx\n", activecontent);
+	activewindow = panel[pn].content;
+	printf("ACTIVEWINDOW 0x%lx\n", activewindow);
+	clientlistupdate(dsp, root);
 
 	data[0] = NormalState;
 	data[1] = None;
@@ -856,7 +856,7 @@ int panelswitch(Display *dsp, Window root, int rel) {
 	do {
 		MODULEINCREASE(pn, numpanels, rel);
 	} while (panel[pn].withdrawn);
-	panelenter(dsp, root, pn);
+	panelenter(dsp, root, activepanel, pn);
 	return 0;
 }
 
@@ -1152,7 +1152,7 @@ int main(int argn, char *argv[]) {
 	Atom irwm, net_wm_state, net_wm_state_stays_on_top;
 	Atom supported[100];
 	int nsupported = 0;
-	int pn, npn;
+	int pn;
 	char *message;
 	int i, j, c, w;
 	Bool tran;
@@ -1619,11 +1619,10 @@ int main(int argn, char *argv[]) {
 			printf("\t0x%lx ", evt.xcreatewindow.window);
 			printf("parent=0x%lx", evt.xcreatewindow.parent);
 			if (evt.xcreatewindow.override_redirect) {
-				printf(" override_redirect\n");
+				printf(" override_redirect");
 				overrideadd(evt.xcreatewindow.window);
 			}
-			else
-				printf("\n");
+			printf("\n");
 			break;
 		case DestroyNotify:
 			printf("DestroyNotify\n");
@@ -1638,25 +1637,22 @@ int main(int argn, char *argv[]) {
 			if (pn == -1)
 				break;
 
-			npn = panelremove(dsp, pn, True);
-			activepanel = -1;
+			panelremove(dsp, pn, True);
+			panelenter(dsp, root, -1, activepanel);
+			raiselists(dsp,
+				&panelwindow, &confirmwindow, &progswindow);
 
-			if (numactive > 0)
-				panelenter(dsp, root, npn);
-			else if (numpanels == 0 && quitonlastclose) {
+			if (numactive > 0 || numpanels > 0)
+				break;
+
+			if (quitonlastclose) {
 				printf("QUIT on last close\n");
 				run = False;
 				break;
 			}
-			else {
-				clientlistupdate(dsp, root);
-				XSetInputFocus(dsp, root,
-					RevertToParent, CurrentTime);
-				printf("to quit on last close, pass -q\n");
-			}
+			else
+				printf("QUIT on last close disabled\n");
 
-			raiselists(dsp,
-				&panelwindow, &confirmwindow, &progswindow);
 			break;
 		case GravityNotify:
 			printf("GravityNotify\n");
@@ -1675,12 +1671,12 @@ int main(int argn, char *argv[]) {
 			printf(" parent=0x%lx", evt.xmap.event);
 			printf("\n");
 
-			pn = panelfind(evt.xunmap.window, CONTENT);
+			pn = panelfind(evt.xmap.window, CONTENT);
 			if (pn == -1 && overridefix)
 				overrideplace(dsp, evt.xunmap.window, &rwa);
 			if (pn == -1 || pn == activepanel)
 				break;
-			panelenter(dsp, root, pn);
+			panelenter(dsp, root, activepanel, pn);
 			raiselists(dsp,
 				&panelwindow, &confirmwindow, &progswindow);
 
@@ -1698,24 +1694,21 @@ int main(int argn, char *argv[]) {
 			printf("\tcontent in panel %d\n", pn);
 
 			if (evt.xunmap.send_event) {
-				npn = panelremove(dsp, pn, False);
-				activepanel = -1;
-				if (numactive > 0)
-					panelenter(dsp, root, npn);
-				else if (numpanels == 0 && quitonlastclose) {
-					run = False;
-					break;
-				}
-				else {
-					clientlistupdate(dsp, root);
-					XSetInputFocus(dsp, root,
-						RevertToParent, CurrentTime);
-					printf("to quit on last close, ");
-					printf("pass -q\n");
-				}
-
+				panelremove(dsp, pn, False);
+				panelenter(dsp, root, -1, activepanel);
 				raiselists(dsp, &panelwindow,
 					&confirmwindow, &progswindow);
+
+				if (numactive == 0 && numpanels == 0) {
+					printf("QUIT on last close");
+					if (quitonlastclose) {
+						printf("\n");
+						run = False;
+						break;
+					}
+					else
+						printf(" disabled\n");
+				}
 			}
 
 			win = panel[pn].leader;
@@ -1728,7 +1721,7 @@ int main(int argn, char *argv[]) {
 				break;
 
 			printf("\tswitching to panel %d\n", pn);
-			panelenter(dsp, root, pn);
+			panelenter(dsp, root, activepanel, pn);
 			raiselists(dsp,
 				&panelwindow, &confirmwindow, &progswindow);
 
@@ -1768,7 +1761,7 @@ int main(int argn, char *argv[]) {
 				printf("ACTIVEWINDOW 0x%lx\n", activewindow);
 				pn = panelfind(activewindow, CONTENT);
 				if (pn != -1)
-					panelenter(dsp, root, pn);
+					panelenter(dsp, root, activepanel, pn);
 				else {
 					XMapWindow(dsp, activewindow);
 					XSetInputFocus(dsp, activewindow,

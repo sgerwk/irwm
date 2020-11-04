@@ -2107,8 +2107,11 @@ int main(int argn, char *argv[]) {
 		kill(lircclient, SIGTERM);
 	}
 	for (i = 0; i < numpanels; i++)
-		if (restart || retire)
+		if (restart || retire) {
 			XReparentWindow(dsp, panel[i].content, root, 0, 0);
+			if (unmaponleave && ! panel[i].withdrawn)
+				XMapWindow(dsp, panel[i].content);
+		}
 		else
 			closewindow(dsp, panel[i].content);
 	XSetInputFocus(dsp, root, RevertToNone, CurrentTime);

@@ -1850,7 +1850,8 @@ int main(int argn, char *argv[]) {
 			     err.request_code == X_ChangeProperty ||
 			     err.request_code == X_SetInputFocus ||
 			     err.request_code == X_ConfigureWindow ||
-			     err.request_code == X_GetWindowAttributes)) {
+			     err.request_code == X_GetWindowAttributes ||
+			     err.request_code == X_DeleteProperty)) {
 				printf("NOTE: ignoring a BadWindow error ");
 				printf("window=0x%lx ", err.resourceid);
 				sprintf(numstring, "%d", err.request_code);

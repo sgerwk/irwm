@@ -1866,6 +1866,7 @@ int main(int argn, char *argv[]) {
 				printf("on a X_GetAtomName request\n");
 				break;
 			}
+			fflush(stdout);
 			defaulthandler(dsp, &err);
 			break;
 		default:

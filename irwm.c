@@ -373,11 +373,13 @@ int lirc(Window root, Atom irwm, char *lircrc) {
  */
 int lircclient;
 void reaper(int s) {
-	int pid;
+	int pid, status;
 	printf("signal %d\n", s);
 	if (s == SIGCHLD) {
-		pid = wait(NULL);
-		printf("reaped child %d", pid);
+		pid = wait(&status);
+		printf("reaped child %d: ", pid);
+		printf("%s, ", WIFEXITED(status) ? "ended" : "terminated");
+		printf("exit status %d", WEXITSTATUS(status));
 		if (pid == lircclient) {
 			printf(" (lirc client)");
 			lircclient = -1;

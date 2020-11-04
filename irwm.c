@@ -1562,9 +1562,7 @@ int main(int argn, char *argv[]) {
 				break;
 
 			panelresize(dsp, rwa, pn);
-			panelenter(dsp, root, pn);
-			raiselists(dsp,
-				&panelwindow, &confirmwindow, &progswindow);
+			XMapWindow(dsp, ermap.window); // -> MapNotify
 			break;
 		case ConfigureRequest:
 			printf("ConfigureRequest\n");

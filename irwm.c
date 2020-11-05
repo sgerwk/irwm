@@ -1847,6 +1847,7 @@ int main(int argn, char *argv[]) {
 			err = evt.xerror;
 			if (err.error_code == BadWindow &&
 			    (err.request_code == X_MapWindow ||
+			     err.request_code == X_UnmapWindow ||
 			     err.request_code == X_ChangeProperty ||
 			     err.request_code == X_SetInputFocus ||
 			     err.request_code == X_ConfigureWindow ||

@@ -758,7 +758,7 @@ void panelresize(Display *dsp, XWindowAttributes base, int pn) {
  */
 void clientlistupdate(Display *dsp, Window root) {
 	Window *list, *slist;
-	int i;
+	int i, j, k, l, n;
 
 	XChangeProperty(dsp, root, net_active_window,
 		XA_WINDOW, 32, PropModeReplace,
@@ -766,16 +766,24 @@ void clientlistupdate(Display *dsp, Window root) {
 
 	list = malloc(numpanels * sizeof(Window));
 	slist = malloc(numpanels * sizeof(Window));
+	n = 0;
+	j = 0;
+	l = 0;
 	for (i = 0; i < numpanels; i++) {
-		list[i] = panel[i].content;
-		slist[i] = panel[(activepanel + 1 + i) % numpanels].content;
+		if (! panel[i].withdrawn) {
+			list[j++] = panel[i].content;
+			n++;
+		}
+		k = (activepanel + 1 + i) % numpanels;
+		if (! panel[k].withdrawn)
+			slist[l++] = panel[k].content;
 	}
 	XChangeProperty(dsp, root, net_client_list,
 		XA_WINDOW, 32, PropModeReplace,
-		(unsigned char *) list, numpanels);
+		(unsigned char *) list, n);
 	XChangeProperty(dsp, root, net_client_list_stacking,
 		XA_WINDOW, 32, PropModeReplace,
-		(unsigned char *) slist, numpanels);
+		(unsigned char *) slist, n);
 	free(list);
 	free(slist);
 }

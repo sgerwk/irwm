@@ -1766,6 +1766,8 @@ int main(int argn, char *argv[]) {
 			if (emessage.message_type == net_active_window &&
 			    emessage.format == 32) {
 				activewindow = emessage.window;
+				if (activewindow == None)
+					break;
 				printf("ACTIVEWINDOW 0x%lx\n", activewindow);
 				pn = panelfind(activewindow, CONTENT);
 				if (pn != -1)

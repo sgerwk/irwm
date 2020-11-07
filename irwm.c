@@ -1124,6 +1124,7 @@ void capturetop(Display *dsp, Window root) {
 			XSendEvent(dsp, root, False, msk, (XEvent *) &mr);
 		}
 	}
+	XFree(top);
 }
 
 /*

@@ -828,16 +828,15 @@ void panelenter(Display *dsp, Window root, int prevpn, int pn) {
 
 	wc.sibling = panelroof;
 	wc.stack_mode = Below;
-	XConfigureWindow(dsp, panel[pn].panel,
-		CWSibling | CWStackMode, &wc);
+	XConfigureWindow(dsp, panel[pn].panel, CWSibling | CWStackMode, &wc);
 	overrideraise(dsp);
 
 	XMapWindow(dsp, panel[pn].content);
 	XMapWindow(dsp, panel[pn].panel);
 
 	panelleave(dsp, prevpn);
-	activepanel = pn;
 
+	activepanel = pn;
 	activecontent = panel[pn].content;
 	printf("ACTIVECONTENT 0x%lx\n", activecontent);
 	activewindow = panel[pn].content;
@@ -849,8 +848,7 @@ void panelenter(Display *dsp, Window root, int prevpn, int pn) {
 	XChangeProperty(dsp, panel[pn].content, wm_state, wm_state,
 		32, PropModeReplace, (unsigned char *) data, 2);
 
-	XSetInputFocus(dsp, panel[pn].content,
-		RevertToParent, CurrentTime);
+	XSetInputFocus(dsp, panel[pn].content, RevertToParent, CurrentTime);
 }
 
 /*

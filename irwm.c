@@ -808,13 +808,13 @@ void panelenter(Display *dsp, Window root, int prevpn, int pn) {
 	panelprint("ENTER", pn);
 
 	if (pn >= numpanels) {
-		printf("WARNING: activepanel=%d not less than numpanels=%d\n",
-			activepanel, numpanels);
+		printf("WARNING: panel number %d not less than numpanels=%d\n",
+			pn, numpanels);
 		return;
 	}
 
 	if (panel[pn].withdrawn) {
-		panelprint("RESTORE", activepanel);
+		panelprint("RESTORE", pn);
 		panel[pn].withdrawn = False;
 		numactive++;
 	}

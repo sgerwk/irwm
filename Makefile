@@ -1,4 +1,4 @@
-PROGS=irwm
+PROGS=irwm hitsides
 MANS=irwm.1
 
 all: $(PROGS)

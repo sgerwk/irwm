@@ -1,10 +1,12 @@
 .TH irwm 1 "Aug 9, 2017"
+
 .
 .
 .
 .SH NAME
 
 irwm - a window manager that can be controlled from an infrared remote
+
 .
 .
 .
@@ -15,6 +17,7 @@ irwm - a window manager that can be controlled from an infrared remote
 .P
 \fBstartx /path/to/irwm\fP [\fIOPTIONS\fP]
 .PD
+
 .
 .
 .
@@ -25,6 +28,10 @@ irwm
 is a window manager that shows one window at time in full-screen. This
 simplicity allows for input devices with a limited number of keys like consumer
 electronics (infrared) remotes.
+
+.
+.
+.
 .SH OPTIONS
 .TP
 .B
@@ -74,6 +81,7 @@ use \fIfile\fP as the lirc configuration file instead of the default
 \fB-log \fIlogfile\fP
 log to file \fIlogfile\fP instead of the default "irwm.log";
 pass "-" to log to stdout and "/dev/null" to disable logging
+
 .
 .
 .
@@ -180,6 +188,7 @@ In single key mode (option -s), PANELWINDOW rotates among the window list,
 the program list and no list. This requires a single key to operate the
 window manager since the keys to move up, move down, select and close can be
 used for other functions when the window and program list are not active.
+
 .
 .
 .
@@ -247,6 +256,7 @@ commandline option.
 The "\fIecho ...\fP" line has the usual meaning.
 
 Lines starting with '#' are comments.
+
 .
 .
 .
@@ -300,6 +310,7 @@ second and then switch back to the previous.
     sleep 1
     irsend SIMULATE '000000000 00 KEY_BLUE simulated'
 .fi
+
 .
 .
 .
@@ -327,6 +338,8 @@ irwmrc. The user may then run other applications via the program list
 (\fIPROGSWINDOW\fP).
 
 In raise mode, the WM_STATE should change to NormalState only if not already.
+
+.
 .
 .
 .SH INTERNALS
@@ -373,6 +386,7 @@ it with the new one; these are the unmap (-u) and raise (-r) modes. In the
 first case, the program controlling the previous window perceives a change
 similar to an iconization; in the second, it perceives as if the user has just
 selected a different window but the previous is still on the screen.
+
 .
 .
 .
@@ -386,6 +400,7 @@ program (\fIWM_COMMAND\fP).
 An option could make NEXTPANEL and PREVPANEL to ``fall off'' to the next or
 previous virtual terminal when at the end of the window list, instead of
 rotating among the windows.
+
 .
 .
 .

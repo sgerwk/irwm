@@ -609,13 +609,21 @@ void panelname(Display *dsp, int pn) {
 }
 
 /*
+ * change title of panel
+ */
+void paneltitle(Display *dsp, int pn) {
+	char name[40];
+	sprintf(name, "irwm panel #%d", pn);
+	XStoreName(dsp, panel[pn].panel, name);
+}
+
+/*
  * create a new panel for a window
  */
 int paneladd(Display *dsp, Window root, Window win, XWindowAttributes *wa,
 		Window leader) {
 	int e;
 	Window p;
-	char name[40];
 
 	if (numpanels >= MAXPANELS) {
 		printf("IRWM ERROR: too many open panels, ");
@@ -634,15 +642,13 @@ int paneladd(Display *dsp, Window root, Window win, XWindowAttributes *wa,
 	XSelectInput(dsp, p, SubstructureNotifyMask);
 	XReparentWindow(dsp, win, p, 0, 0);
 
-	sprintf(name, "irwm panel #%d", numpanels);
-	XStoreName(dsp, p, name);
-
 	panel[numpanels].panel = p;
 	panel[numpanels].content = win;
 	panel[numpanels].name = NULL;
 	panelname(dsp, numpanels);
 	panel[numpanels].leader = leader;
 	panel[numpanels].withdrawn = False;
+	paneltitle(dsp, numpanels);
 
 	panelprint("CREATE", numpanels);
 
@@ -714,8 +720,11 @@ void panelremove(Display *dsp, int pn, Bool destroy) {
 				continue;
 			}
 		}
-		if (j != i)
+		if (j != i) {
+			printf("PANEL %d BECOMES PANEL %d\n", i, j);
 			panel[j] = panel[i];
+			paneltitle(dsp, j);
+		}
 		j++;
 	}
 

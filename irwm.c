@@ -758,6 +758,7 @@ void panelresize(Display *dsp, XWindowAttributes base, int pn) {
 		return;
 	panelprint("RESIZE", pn);
 	XSetWindowBorderWidth(dsp, panel[pn].content, 0);
+	XMoveWindow(dsp, panel[pn].content, 1, 1); // java swing
 	XMoveResizeWindow(dsp, panel[pn].content,
 		0, 0, base.width, base.height);
 }

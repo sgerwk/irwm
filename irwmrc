@@ -6,6 +6,7 @@
 startup xterm
 startup xcalc
 startup xclock
+# startup hitsides
 
 # programs that can be executed from the program list
 

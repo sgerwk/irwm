@@ -155,6 +155,7 @@
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
 #include <X11/Xproto.h>
+#include <X11/cursorfont.h>
 #ifdef LIRC
 #include <lirc_client.h>
 #endif
@@ -1174,6 +1175,7 @@ int main(int argn, char *argv[]) {
 	int i, j, c, w;
 	Bool tran;
 	KeySym shortcuts[100];
+	Cursor cursorlog, cursornormal;
 
 	Bool startprogs = True, uselirc = False, singlekey = False;
 	Bool overridefix = False;
@@ -1548,6 +1550,11 @@ int main(int argn, char *argv[]) {
 			XKeysymToKeycode(dsp, commandstring[i].keysym),
 			commandstring[i].modifier,
 			root, False, GrabModeAsync, GrabModeAsync);
+
+				/* cursors, used to notify logging */
+
+	cursornormal = XCreateFontCursor(dsp, XC_X_cursor);
+	cursorlog = XCreateFontCursor(dsp, XC_based_arrow_down);
 
 				/* main loop */
 
@@ -2088,10 +2095,14 @@ int main(int argn, char *argv[]) {
 				panelresize(dsp, rwa, activepanel);
 				break;
 			case LOGLIST:
+				XDefineCursor(dsp, root, cursorlog);
 				for (pn = 0; pn < numpanels; pn++)
 					panelprint("LOG", pn);
 				for (i = 0; i < numoverride; i++)
 					overrideprint("LOG", i);
+				XFlush(dsp);
+				usleep(300000);
+				XDefineCursor(dsp, root, cursornormal);
 				break;
 			case POSITIONFIX:
 				overridefix = ! overridefix;

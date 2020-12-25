@@ -1370,7 +1370,9 @@ int main(int argn, char *argv[]) {
 
 				/* log file */
 
-	if (! ! strcmp(logfile, "-")) {
+	if (! strcmp(logfile, "-"))
+		lf = -1;
+	else {
 		lf = creat(logfile, S_IRUSR | S_IWUSR);
 		if (lf == -1)
 			perror(logfile);
@@ -2145,6 +2147,12 @@ int main(int argn, char *argv[]) {
 		cargv[cargn - 1] = startprogs ? "-n" : NULL;
 		cargv[cargn] = NULL;
 		printf("irwm restart\n");
+		fflush(stdout);
+		if (lf != -1) {
+			close(lf);
+			close(STDOUT_FILENO);
+			close(STDERR_FILENO);
+		}
 		execvp(cargv[0], cargv);
 		perror(cargv[0]);
 	}

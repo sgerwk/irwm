@@ -1645,10 +1645,11 @@ int main(int argn, char *argv[]) {
 			printf("\t0x%lx ", evt.xcreatewindow.window);
 			printf("parent=0x%lx", evt.xcreatewindow.parent);
 			if (evt.xcreatewindow.override_redirect) {
-				printf(" override_redirect");
+				printf(" override_redirect\n");
 				overrideadd(evt.xcreatewindow.window);
 			}
-			printf("\n");
+			else
+				printf("\n");
 			break;
 		case DestroyNotify:
 			printf("DestroyNotify\n");

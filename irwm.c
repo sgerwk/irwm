@@ -2096,14 +2096,17 @@ int main(int argn, char *argv[]) {
 				panelresize(dsp, rwa, activepanel);
 				break;
 			case LOGLIST:
-				XDefineCursor(dsp, root, cursorlog);
+				win = activepanel == -1 ? root :
+					panel[activepanel].content;
+				XDefineCursor(dsp, win, cursorlog);
 				for (pn = 0; pn < numpanels; pn++)
 					panelprint("LOG", pn);
 				for (i = 0; i < numoverride; i++)
 					overrideprint("LOG", i);
+				fflush(stdout);
 				XFlush(dsp);
 				usleep(300000);
-				XDefineCursor(dsp, root, cursornormal);
+				XDefineCursor(dsp, win, cursornormal);
 				break;
 			case POSITIONFIX:
 				overridefix = ! overridefix;

@@ -35,6 +35,7 @@ logfile /run/user/1000/irwm.log
 confirmquit
 # quitonlastclose
 stickaround
+# passkeys
 # unmaponleave
 
 echo end of configuration file

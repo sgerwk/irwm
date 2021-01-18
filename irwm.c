@@ -34,6 +34,7 @@
  *   LOGLIST		print the list of panels in the log file
  *   POSITIONFIX	toggle fixing the position of override windows
  *   RESIZE		resize the current panel
+ *   PASSKEYS		send or do not send the irwm keystrokes to the window
  *
  *   PANELWINDOW	show/hide the panel list window
  *   PROGSWINDOW	show/hide the program list window
@@ -186,6 +187,7 @@
 #define LOGLIST        6	/* print panels in the log file */
 #define POSITIONFIX    7	/* toggle: fix position of override windows */
 #define RESIZE         8	/* resize the current panel */
+#define PASSKEYS       9	/* pass keystrokes to the window or stop it */
 
 #define PANELWINDOW   10	/* show the panel list window */
 #define PROGSWINDOW   11	/* show the programs window */
@@ -214,6 +216,7 @@ struct {
 	{LOGLIST,	"LOGLIST",	XK_l,	ControlMask | ShiftMask},
 	{PANELWINDOW,	"PANELWINDOW",	XK_Tab,		Mod1Mask},
 	{PROGSWINDOW,	"PROGSWINDOW",	XK_Tab,		ControlMask},
+	{PASSKEYS,	"PASSKEYS",	XK_Up,		Mod1Mask},
 	{-1,		"ENDGRAB",	XK_VoidSymbol,	0},
 	{RETIRE,	"RETIRE", 	XK_VoidSymbol,  0},
 	{RESIZE,	"RESIZE",	XK_VoidSymbol,  0},
@@ -273,6 +276,23 @@ int eventtocommand(Display *dsp, XKeyEvent e, KeySym *list) {
 		if (e.keycode == XKeysymToKeycode(dsp, *list))
 			return NUMWINDOW(i + 1);
 	return NOCOMMAND;
+}
+
+/*
+ * grab or ungrab the keys
+ */
+void grabkeys(Display *dsp, Window root, Bool grab) {
+	int i;
+	for (i = 1; ! ! strcmp(commandstring[i].string, "ENDGRAB"); i++)
+		if (grab)
+			XGrabKey(dsp,
+				XKeysymToKeycode(dsp, commandstring[i].keysym),
+				commandstring[i].modifier,
+				root, False, GrabModeAsync, GrabModeAsync);
+		else if (commandstring[i].command != PASSKEYS)
+			XUngrabKey(dsp,
+				XKeysymToKeycode(dsp, commandstring[i].keysym),
+				commandstring[i].modifier, root);
 }
 
 /*
@@ -1181,6 +1201,7 @@ int main(int argn, char *argv[]) {
 	Bool overridefix = False;
 	Bool quitonlastclose = False, confirmquit = False;
 	Bool run, restart, retire, stickaround = False;
+	Bool grabtoggle = False, grab = True;
 	int command;
 	Bool showpanel = False, showprogs = False, showconfirm = False;
 	int progselected = 0, confirmselected = 0;
@@ -1323,6 +1344,9 @@ int main(int argn, char *argv[]) {
 			else if (1 == sscanf(line, "%s", s1) &&
 			     ! strcmp(s1, "confirmquit"))
 				confirmquit = True;
+			else if (1 == sscanf(line, "%s", s1) &&
+			     ! strcmp(s1, "passkeys"))
+				grabtoggle = True;
 			else if (1 == sscanf(line, "%s", s1) &&
 			     ! strcmp(s1, "positionfix"))
 				overridefix = True;
@@ -1545,11 +1569,7 @@ int main(int argn, char *argv[]) {
 
 				/* grab keys */
 
-	for (i = 1; ! ! strcmp(commandstring[i].string, "ENDGRAB"); i++)
-		XGrabKey(dsp,
-			XKeysymToKeycode(dsp, commandstring[i].keysym),
-			commandstring[i].modifier,
-			root, False, GrabModeAsync, GrabModeAsync);
+	grabkeys(dsp, root, grab);
 
 				/* cursors, used to notify logging */
 
@@ -2090,6 +2110,13 @@ int main(int argn, char *argv[]) {
 						0, 0, 0, 0, True);
 					XRaiseWindow(dsp, panelwindow.window);
 				}
+				break;
+
+			case PASSKEYS:
+				if (! grabtoggle)
+					break;
+				grab = ! grab;
+				grabkeys(dsp, root, grab);
 				break;
 
 			case RESIZE:

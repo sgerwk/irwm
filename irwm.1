@@ -111,6 +111,14 @@ LOGLIST
 print list of windows in the log file
 .TP
 .I
+PASSKEYS
+(Alt-KeyUp)
+do not intercept the other key combination; \fIirwm\fP does not receive them,
+the current window does; this goes on until the next \fIPASSKEYS\fP; this
+function is disabled by default, it only works if enabled in the configuration
+file
+.TP
+.I
 POSITIONFIX
 toggle moving override_redirect windows in the screen; some applications place
 menus and other controls outside the screen, where they are unusable; when this
@@ -216,6 +224,7 @@ On startup, irwm reads \fI$HOME/.irwmrc\fP and, if this file does not exists,
     quitonlastclose
     confirmquit
     stickaround
+    # passkeys
     # unmaponleave
 
     echo end of configuration file
@@ -248,6 +257,10 @@ server but not terminate on retiring. This may ne necessary to make retiring
 work as expected. If irwm is started by \fIstartx\fP, its termination would
 quit the X server as well. This option lets it stick around while another
 window manager takes over. The X server only terminates when irwm is killed.
+
+The line "\fIpasskeys\fP" enable passing the irwm keystrokes to the current
+window. This is done and terminated by Alt-KeyUp. It is needed to run
+\fIirwm\fP in an \fIXnest(1)\fP, for example.
 
 The line "\fIunmaponleave\fP" would switch from the normal raise mode to unmap
 mode (see INTERNALS, below) if uncommented. It is equivalent to the \fI-u\fP
@@ -377,6 +390,7 @@ numbers are:
 #define LOGLIST        6	/* print panels in the log file */
 #define POSITIONFIX    7	/* toggle: fix position of override windows */
 #define RESIZE         8	/* resize the current panel */
+#define PASSKEYS       9	/* pass keystrokes to the window or stop it */
 
 #define PANELWINDOW   10	/* show the window list */
 #define PROGSWINDOW   11	/* show the program list */

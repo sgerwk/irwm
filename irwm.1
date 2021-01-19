@@ -113,10 +113,10 @@ print list of windows in the log file
 .I
 PASSKEYS
 (Alt-KeyUp)
-do not intercept the other key combination; \fIirwm\fP does not receive them,
-the current window does; this goes on until the next \fIPASSKEYS\fP; this
-function is disabled by default, it only works if enabled in the configuration
-file
+do not intercept the other key combinations, such as Alt-Left and Alt-Right;
+they go to the current window instead of \fIirwm\fP; this goes on until the
+next \fIPASSKEYS\fP; this function is disabled by default, but can be enabled
+in the configuration file
 .TP
 .I
 POSITIONFIX

@@ -1371,6 +1371,9 @@ int main(int argn, char *argv[]) {
 					printf("ignored (-n): %s", line);
 			}
 			else if (2 == sscanf(line, "program %s %s", s1, s2)) {
+				for (p = s1; *p != '\0'; p++)
+					if (*p == '_')
+						*p = ' ';
 				programs[numprograms].title = strdup(s1);
 				programs[numprograms].program = strdup(s2);
 				shortcuts[numprograms] = s1[0] - 'a' + XK_a;

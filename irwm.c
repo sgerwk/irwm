@@ -1365,8 +1365,10 @@ int main(int argn, char *argv[]) {
 			         ! strcmp(s1, "stickaround"))
 				stickaround = True;
 			else if (1 == sscanf(line, "startup %s", s1)) {
-				if (startprogs)
+				if (startprogs) {
+					fflush(irwmrc);
 					forkprogram(s1, NULL);
+				}
 				else
 					printf("ignored (-n): %s", line);
 			}

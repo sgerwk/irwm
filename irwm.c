@@ -1583,6 +1583,7 @@ int main(int argn, char *argv[]) {
 
 				/* main loop */
 
+	retire = False;
 	restart = False;
 	for (run = True; run; ) {
 

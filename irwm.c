@@ -1619,7 +1619,7 @@ int main(int argn, char *argv[]) {
 			printf("\n");
 
 			pn = paneladd(dsp, root, ermap.window, &rwa,
-				tran ? win : None);
+				tran ? win : ermap.window);
 			if (pn == -1)
 				break;
 
@@ -1775,7 +1775,7 @@ int main(int argn, char *argv[]) {
 			}
 
 			win = panel[pn].leader;
-			if (win == None)
+			if (win == evt.xunmap.window)
 				break;
 			printf("\tleader is 0x%lx\n", win);
 

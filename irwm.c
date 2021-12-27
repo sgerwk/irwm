@@ -576,6 +576,7 @@ struct panel {
 int numpanels = 0;
 int numactive = 0;
 int activepanel = -1;
+int previouspanel = -1;
 Window activecontent = None;
 Bool unmaponleave = False;	/* unmap window when switching to another */
 Window activewindow = None;	/* may not be the content of a panel */
@@ -710,6 +711,12 @@ void panelremove(Display *dsp, int pn, Bool destroy) {
 		activecontent = None;
 		printf("ACTIVECONTENT 0x%lx\n", activecontent);
 	}
+	if (pn == previouspanel)
+		previouspanel = -1;
+	if (previouspanel != -1) {
+		activepanel = previouspanel;
+		previouspanel = -1;
+	}
 
 	j = 0;
 	n = numpanels;
@@ -831,6 +838,7 @@ void panelenter(Display *dsp, Window root, int prevpn, int pn) {
 		printf("ACTIVECONTENT 0x%lx\n", activecontent);
 		panelleave(dsp, prevpn);
 		XSetInputFocus(dsp, root, RevertToParent, CurrentTime);
+		previouspanel = activepanel;
 		activepanel = pn;
 		clientlistupdate(dsp, root);
 		return;
@@ -852,6 +860,7 @@ void panelenter(Display *dsp, Window root, int prevpn, int pn) {
 
 	if (activecontent == panel[pn].content) {
 		printf("NOTE: active content already active\n");
+		previouspanel = activepanel;
 		activepanel = pn;
 		clientlistupdate(dsp, root);
 		return;
@@ -867,6 +876,7 @@ void panelenter(Display *dsp, Window root, int prevpn, int pn) {
 
 	panelleave(dsp, prevpn);
 
+	previouspanel = activepanel;
 	activepanel = pn;
 	activecontent = panel[pn].content;
 	printf("ACTIVECONTENT 0x%lx\n", activecontent);
@@ -2111,6 +2121,7 @@ int main(int argn, char *argv[]) {
 					     i < numpanels - 1;
 					     i++)
 						panelswap(i, i + 1);
+					previouspanel = activepanel;
 					activepanel = numpanels - 1;
 					XClearArea(dsp, panelwindow.window,
 						0, 0, 0, 0, True);

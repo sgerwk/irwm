@@ -1727,6 +1727,13 @@ int main(int argn, char *argv[]) {
 			if (ereparent.event != ereparent.parent)
 				printf("away from 0x%lx, ", ereparent.event);
 			printf("to 0x%lx\n", ereparent.parent);
+			if (ereparent.event == ereparent.parent)
+				break;
+			pn = panelfind(ereparent.event, PANEL);
+			if (pn == -1)
+				break;
+			printf("\tpanel %d becomes empty, removing\n", pn);
+			panelremove(dsp, pn, True);
 			break;
 		case MapNotify:
 			printf("MapNotify\n");

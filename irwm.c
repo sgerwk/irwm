@@ -1917,6 +1917,8 @@ int main(int argn, char *argv[]) {
 		case Error:
 			printf("Error\n");
 			err = evt.xerror;
+			win = None;
+
 			if (err.error_code == BadWindow &&
 			    (err.request_code == X_MapWindow ||
 			     err.request_code == X_UnmapWindow ||
@@ -1934,7 +1936,8 @@ int main(int argn, char *argv[]) {
 				XGetErrorDatabaseText(dsp, "XRequest",
 					numstring, "", errortext, 2000);
 				printf("%s\n", errortext);
-				break;
+
+				win = err.resourceid;
 			}
 			if (err.error_code == BadValue &&
 			    err.request_code == X_KillClient) {
@@ -1950,7 +1953,18 @@ int main(int argn, char *argv[]) {
 				break;
 			}
 			fflush(stdout);
-			defaulthandler(dsp, &err);
+
+			if (win == None)
+				defaulthandler(dsp, &err);
+			else {
+				pn = panelfind(win, CONTENT);
+				if (pn == -1)
+					break;
+				panelremove(dsp, pn, True);
+				panelenter(dsp, root, -1, activepanel);
+				raiselists(dsp, &panelwindow,
+					&confirmwindow, &progswindow);
+			}
 			break;
 		default:
 			printf("Unexpected event, type=%d\n", evt.type);

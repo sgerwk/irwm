@@ -1925,7 +1925,9 @@ int main(int argn, char *argv[]) {
 			     err.request_code == X_ConfigureWindow ||
 			     err.request_code == X_GetWindowAttributes ||
 			     err.request_code == X_GetProperty ||
-			     err.request_code == X_DeleteProperty)) {
+			     err.request_code == X_ReparentWindow ||
+			     err.request_code == X_DeleteProperty ||
+			     err.request_code == X_DestroyWindow)) {
 				printf("NOTE: ignoring a BadWindow error ");
 				printf("window=0x%lx ", err.resourceid);
 				sprintf(numstring, "%d", err.request_code);
@@ -1933,6 +1935,13 @@ int main(int argn, char *argv[]) {
 					numstring, "", errortext, 2000);
 				printf("%s\n", errortext);
 				break;
+			}
+			if (err.error_code == BadValue &&
+			    err.request_code == X_KillClient) {
+				printf("NOTE: ignoring a BadValue error ");
+				printf("on a X_KillClient request\n");
+
+				win = err.resourceid;
 			}
 			if (err.error_code == BadAtom &&
 			    err.request_code == X_GetAtomName) {

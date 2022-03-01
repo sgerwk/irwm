@@ -1468,6 +1468,11 @@ int main(int argn, char *argv[]) {
 #else
 	gc = XCreateGC(dsp, root, GCLineWidth, &gcv);
 	font = XftFontOpenName(dsp, 0, fontname == NULL ? XFTFONT : fontname);
+	if (font == NULL) {
+		printf("cannot load font %s",
+			fontname == NULL ? XFTFONT : fontname);
+		exit(EXIT_FAILURE);
+	}
 #endif
 
 	listwidth = rwa.width / 4;
